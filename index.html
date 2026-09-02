@@ -56,11 +56,11 @@
   .stat-card .num.down{color:var(--down);}
   @media (max-width:640px){.stat-row{grid-template-columns:1fr;}}
 
-  /* 상단 탭 (토스 메뉴바 느낌) */
-  .nav-tabs{display:flex;gap:22px;border-bottom:1px solid var(--border);margin-bottom:18px;}
+  /* 상단 탭 */
+  .nav-tabs{display:flex;gap:22px;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto;}
   .nav-tab{
     background:none;border:none;padding:11px 0;font-size:15px;font-weight:700;
-    color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;
+    color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;
   }
   .nav-tab.active{color:var(--text);border-bottom-color:var(--text);}
   .view{display:none;}
@@ -189,6 +189,80 @@
   .dj-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
   .dj-meta{color:var(--muted);font-size:11.5px;flex-shrink:0;}
   .placeholder-hint{color:var(--muted);font-size:13px;text-align:center;padding:20px 0;}
+
+  /* 월별 리포트 카드 UI */
+  .report-card-list{display:flex;flex-direction:column;gap:12px;margin-top:10px;}
+  .report-item-card{
+    background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px;
+    display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+    transition:all 0.15s ease;
+  }
+  .report-item-card:hover{border-color:var(--blue);box-shadow:0 4px 12px rgba(49,130,246,0.08);transform:translateY(-1px);}
+  .report-item-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;}
+  .report-item-sub{font-size:12.5px;color:var(--muted);}
+  .report-badge{
+    background:var(--blue-soft);color:var(--blue);font-size:12px;font-weight:700;
+    padding:4px 10px;border-radius:20px;white-space:nowrap;
+  }
+
+  /* 모달 팝업 스타일 */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    opacity:0;pointer-events:none;transition:opacity 0.2s ease;
+  }
+  .modal-overlay.active{opacity:1;pointer-events:auto;}
+  .modal-container{
+    background:#fff;width:100%;max-width:780px;max-height:85vh;
+    border-radius:18px;box-shadow:0 12px 36px rgba(0,0,0,0.18);
+    display:flex;flex-direction:column;overflow:hidden;
+    transform:translateY(12px);transition:transform 0.2s ease;
+  }
+  .modal-overlay.active .modal-container{transform:translateY(0);}
+  .modal-header{
+    padding:16px 22px;border-bottom:1px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center;background:#fff;gap:12px;
+  }
+  .modal-title{font-size:16px;font-weight:700;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .modal-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .modal-btn{
+    background:var(--surface);border:1px solid var(--border);border-radius:8px;
+    padding:6px 11px;font-size:12px;font-weight:700;color:var(--text);cursor:pointer;
+    display:inline-flex;align-items:center;gap:4px;
+  }
+  .modal-btn:hover{background:var(--surface-2);}
+  .modal-btn-blue{background:var(--blue);color:#fff;border:none;}
+  .modal-btn-blue:hover{background:#2872e5;}
+  .modal-close-btn{background:none;border:none;font-size:18px;color:var(--muted);cursor:pointer;font-weight:700;padding:0 4px;}
+  .modal-body{padding:22px;overflow-y:auto;line-height:1.7;font-size:14px;color:#333d4b;}
+
+  /* AI 리포트 전용 카드 UI 스타일 */
+  .ai-section-card{
+    background:var(--surface);border-radius:12px;padding:16px 18px;margin-bottom:14px;
+    border:1px solid var(--border);
+  }
+  .ai-section-title{
+    font-size:15px;font-weight:700;color:var(--text);margin:0 0 10px 0;
+  }
+  .ai-section-body{font-size:13.5px;line-height:1.7;color:#333d4b;}
+  .ai-section-body ul{margin:6px 0;padding-left:18px;}
+  .ai-section-body li{margin-bottom:6px;}
+  .ai-section-body b{color:var(--text);background:#eef4ff;padding:1px 5px;border-radius:4px;}
+
+  /* 아코디언 프롬프트 공개 박스 */
+  .ai-prompt-accordion{
+    margin-top:20px;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:12px 16px;font-size:13px;
+  }
+  .ai-prompt-accordion summary{
+    font-weight:700;color:var(--muted);cursor:pointer;user-select:none;
+  }
+  .ai-prompt-accordion summary:hover{color:var(--text);}
+  .ai-prompt-content{
+    margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);
+    white-space:pre-wrap;color:#4e5968;font-size:12.5px;line-height:1.6;
+    background:#fff;padding:12px;border-radius:8px;
+  }
 </style>
 </head>
 <body>
@@ -222,6 +296,7 @@
       <button class="nav-tab" data-view="company">기업별</button>
       <button class="nav-tab" data-view="category">공고별</button>
       <button class="nav-tab" data-view="employment">고용형태별</button>
+      <button class="nav-tab" data-view="report">월별 리포트</button>
     </div>
 
     <!-- 홈 -->
@@ -253,7 +328,7 @@
         <div class="insight-footnote">데이터 기반으로 자동 생성된 요약이에요.</div>
 
         <div class="ai-comment-row">
-          <button class="ai-btn" id="aiCommentBtn" onclick="generateAiComment()">🤖 Gemini AI 종합 트렌드 분석</button>
+          <button class="ai-btn" id="aiCommentBtn" onclick="generateAiComment()">🤖 Gemini AI 실시간 분석</button>
           <button class="ai-reset-btn" onclick="resetGeminiApiKey()">API 키 재설정</button>
         </div>
         <div class="ai-comment-box" id="aiCommentBox" style="display:none;"></div>
@@ -315,6 +390,33 @@
       </table>
     </div>
 
+    <!-- 월별 리포트 -->
+    <div class="view" id="view-report">
+      <div class="panel">
+        <div class="panel-title">📅 월별 AI 분석 리포트 보관함</div>
+        <div id="reportListContainer">
+          <div class="placeholder-hint">스냅샷 데이터를 확인하고 있어요...</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 팝업 모달 레이어 -->
+<div class="modal-overlay" id="reportModal">
+  <div class="modal-container">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">월별 분석 리포트</div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-blue" onclick="downloadReport()">📥 다운로드</button>
+        <button class="modal-btn" onclick="shareReport()">🔗 공유하기</button>
+        <button class="modal-close-btn" onclick="closeReportModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <div class="placeholder-hint">리포트 내용을 불러오는 중입니다...</div>
+    </div>
   </div>
 </div>
 
@@ -323,6 +425,9 @@ let snapshots = [];
 let charts = {};
 let selected = {company:null, category:null, employment:null};
 let sortStateByKind = {company:'count', category:'count', employment:'count'};
+
+// 모달에 열린 현재 리포트 저장용 변수
+let currentReportData = { date: '', title: '', text: '', prompt: '' };
 
 document.getElementById('fileInput').addEventListener('change', async (e)=>{
   const files = Array.from(e.target.files);
@@ -340,14 +445,9 @@ function applySnapshots(parsed){
   render();
 }
 
-/* 온라인 호스팅(GitHub Pages)에서는 GitHub API로 data/snapshots 폴더 안의
-   csv 파일 목록을 직접 물어봐서 자동으로 불러옵니다. file://로 그냥 열었을
-   때는 브라우저 보안 정책 때문에 이 방식이 안 통하니, 그때는 위쪽
-   "CSV 불러오기" 버튼으로 수동 업로드하면 됩니다. */
 async function tryAutoLoad(){
-  // github.io로 호스팅된 경우에만 시도 (예: sunggyuhong-eng.github.io/gamejob-jobs/)
-  const host = window.location.hostname; // 예: sunggyuhong-eng.github.io
-  const pathParts = window.location.pathname.split('/').filter(Boolean); // 예: ['gamejob-jobs','dashboard.html']
+  const host = window.location.hostname;
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
   if(!host.endsWith('github.io') || !pathParts.length) return false;
 
   const owner = host.split('.')[0];
@@ -382,8 +482,6 @@ async function tryAutoLoad(){
 window.addEventListener('DOMContentLoaded', async ()=>{
   const ok = await tryAutoLoad();
   if(!ok){
-    // 자동 로드 실패 시(예: 로컬에서 직접 열었거나, 아직 Actions가 한 번도 안 돌았을 때)
-    // 수동 업로드 버튼을 보여주는 걸로 대체
     document.getElementById('uploadBtn').style.display = 'inline-flex';
     document.getElementById('emptyState').innerHTML =
       '<strong>자동으로 데이터를 못 불러왔어요</strong>' +
@@ -416,9 +514,6 @@ function jobCategories(j){
   return [j.job_function || '기타/미분류'];
 }
 
-/* 정확한 직종 문자열 -> 큰 부서 그룹으로 매핑 + 이모지.
-   순서가 중요합니다: "사업기획"이 "기획"보다 먼저 "사업"으로 잡히도록
-   사업을 기획보다 먼저 검사합니다. */
 const GROUP_INFO = [
   ['개발', '💻', ['클라이언트','서버','엔진','AI 개발','플랫폼','인프라','프로그래','개발자','백엔드','프론트','네트워크','기술지원']],
   ['아트', '🎨', ['디자인','원화','모델링','애니메이션','이펙트','그래픽','아트','일러스트','컨셉','사운드','영상']],
@@ -474,13 +569,13 @@ function render(){
   setupEntityView('category');
   renderEmploymentView();
   renderInsightSummary();
+  renderReportView();
 }
 
 function setupNav(){
   document.querySelectorAll('.nav-tab').forEach(btn=>{
     btn.onclick = ()=>{
       const view = btn.dataset.view;
-      // 이미 상세(디테일)가 열려있는 탭을 다시 누르면 목록으로 돌아가기
       if(['company','category','employment'].includes(view) && selected[view]){
         selected[view] = null;
         if(view==='company' || view==='category') drawEntityTable(view);
@@ -655,7 +750,6 @@ function renderRankRows(tbodyEl, entries, kind, limit, navigateOnClick){
   });
 }
 
-/* 홈 화면 랭킹에서 클릭 -> 해당 탭으로 이동하면서 그 항목 상세를 바로 열어줌 */
 function goToEntityDetail(kind, name){
   selected[kind] = name;
   switchView(kind);
@@ -673,17 +767,19 @@ function renderHomeRankings(){
   renderRankRows(document.querySelector('#homeCompanyTable tbody'), compEntries, 'company', 10, true);
 }
 
-/* ---------- 이번 달 채용 트렌드 요약 (규칙 기반 자동 생성) ---------- */
 function fmtPct(delta, prev){
   if(prev>0) return ` (${delta>0?'+':''}${(delta/prev*100).toFixed(0)}%)`;
   if(delta>0) return ' (신규)';
   return '';
 }
 
-function computeMonthlyStats(){
+function computeMonthlyStats(snapIndex){
   if(snapshots.length<2) return null;
-  const latest = snapshots[snapshots.length-1];
-  const prev = snapshots[snapshots.length-2];
+  const idx = snapIndex != null ? snapIndex : snapshots.length - 1;
+  if(idx < 1) return null;
+
+  const latest = snapshots[idx];
+  const prev = snapshots[idx - 1];
 
   const totalDelta = latest.jobs.length - prev.jobs.length;
 
@@ -711,14 +807,21 @@ function computeMonthlyStats(){
     pct: Number((curE[name]/latest.jobs.length*100).toFixed(1))
   })).sort((a,b)=>b.cur-a.cur);
 
-  const compSorted = [...entityState.company].filter(e=>e.delta!=null).sort((a,b)=>b.delta-a.delta);
-  const compGain = compSorted[0];
-  const compDrop = compSorted[compSorted.length-1];
+  const compSorted = [...entityState.company].filter(e=>e.series[idx]!=null).sort((a,b)=>{
+    const dA = (a.series[idx] || 0) - (a.series[idx-1] || 0);
+    const dB = (b.series[idx] || 0) - (b.series[idx-1] || 0);
+    return dB - dA;
+  });
+
+  const topIncComp = compSorted[0];
+  const topDecComp = compSorted[compSorted.length-1];
 
   return {
     date: latest.date, prevDate: prev.date,
     latestTotal: latest.jobs.length, prevTotal: prev.jobs.length, totalDelta,
-    groupDeltas, empBreakdown, compGain, compDrop,
+    groupDeltas, empBreakdown,
+    compGain: topIncComp ? { name: topIncComp.name, delta: topIncComp.series[idx] - topIncComp.series[idx-1], latest: topIncComp.series[idx] } : null,
+    compDrop: topDecComp ? { name: topDecComp.name, delta: topDecComp.series[idx] - topDecComp.series[idx-1], latest: topDecComp.series[idx] } : null,
   };
 }
 
@@ -772,11 +875,11 @@ function renderInsightSummary(){
   document.getElementById('insightList').innerHTML = bullets.map(b=>`<li>${b}</li>`).join('');
 }
 
-/* ---------- AI 코멘트 (Gemini API + Google Search Grounding 연동) ---------- */
+/* ---------- Gemini AI 분석 ---------- */
 function getGeminiApiKey(promptIfMissing){
   let key = localStorage.getItem('gemini_api_key');
   if(!key && promptIfMissing){
-    key = window.prompt('Gemini API 키를 입력하세요 (aistudio.google.com 에서 무료 발급 가능).\n이 브라우저에만 저장되며 외부로 유출되지 않습니다.');
+    key = window.prompt('Gemini API 키를 입력하세요 (aistudio.google.com 에서 발급).\n브라우저에만 안전하게 저장됩니다.');
     if(key) localStorage.setItem('gemini_api_key', key.trim());
   }
   return key ? key.trim() : null;
@@ -784,7 +887,7 @@ function getGeminiApiKey(promptIfMissing){
 
 function resetGeminiApiKey(){
   localStorage.removeItem('gemini_api_key');
-  alert('저장된 Gemini API 키를 지웠습니다. 다음에 분석 버튼을 누르면 다시 입력 창이 나타납니다.');
+  alert('저장된 Gemini API 키를 지웠습니다.');
 }
 
 function buildAiPrompt(stats){
@@ -799,29 +902,68 @@ function buildAiPrompt(stats){
   const gainComp = stats.compGain ? stats.compGain.name : '없음';
   const dropComp = stats.compDrop ? stats.compDrop.name : '없음';
 
-  return `너는 대한민국 게임 산업 전문 애널리스트이자 채용 시장 분석가야.
-제공된 게임잡 채용 스냅샷 데이터와 너의 Google Search 기능(최신 회사 뉴스, 신작 게임 프로젝트 발표, 게임 업계 이슈 등)을 종합 활용하여 깊이 있는 분석 리포트를 작성해줘.
+  return `너는 대한민국 게임 산업 전문 애널리스트야.
+제공된 게임잡 채용 스냅샷 데이터와 너의 Google Search 기능(최신 회사 뉴스, 신작 게임 프로젝트, 업계 이슈 등)을 종합 활용해서 분석 리포트를 작성해줘.
 
-[이번 달 게임잡 채용 데이터]
-- 전체 공고 수: 이번달(${stats.date}) ${stats.latestTotal}건 / 지난달(${stats.prevDate}) ${stats.prevTotal}건 (전월 대비: ${stats.totalDelta>=0?'+':''}${stats.totalDelta}건)
+[데이터 기준: ${stats.date} (비교: ${stats.prevDate})]
+- 전체 공고: 이번달 ${stats.latestTotal}건 (전월 대비: ${stats.totalDelta>=0?'+':''}${stats.totalDelta}건)
 
-[직무 그룹별 변동]
+[직무 변동]
 ${groupLines}
 
-[고용형태별 비중]
+[고용형태]
 ${empLines}
 
 [주요 기업 변동]
-- 공고 증가 1위 기업: ${gainComp} (${stats.compGain ? (stats.compGain.delta>=0?'+':'')+stats.compGain.delta : 0}건)
-- 공고 감소 1위 기업: ${dropComp} (${stats.compDrop ? stats.compDrop.delta : 0}건)
+- 증가 1위: ${gainComp} (${stats.compGain ? (stats.compGain.delta>=0?'+':'')+stats.compGain.delta : 0}건)
+- 감소 1위: ${dropComp} (${stats.compDrop ? stats.compDrop.delta : 0}건)
 
-[분석 요구사항 및 리포트 작성 가이드]
-1. 직무 및 고용형태 동향 분석: 어떤 직무군(개발, 아트, 기획 등)과 고용형태가 시장을 이끌고 있는지 요약해줘.
-2. 최신 회사 뉴스 & 게임 프로젝트 연계 분석:
-   - 공고 변동이 큰 주요 기업들(${gainComp}, ${dropComp} 등)에 대해 최신 소식, 신작 라이브 서비스 및 프로젝트 개발 상황, 구조조정/투자 이슈 등을 실시간 검색하여 채용 증감의 배경 원인을 구체적으로 분석해줘.
-   - 최근 게임 업계 트렌드(AI 도입, 모바일/PC/콘솔 다변화, 서브컬처/MMO 등 특정 장르 유행)와 연결지어 설명해줘.
-3. 구직자/현직자 시사점: 현재 채용 시장 흐름에서 게임 구직자들이 가져가야 할 전략 및 향후 전망을 3~4문장으로 정리해줘.
-4. 문체: 가독성 높은 한국어로 작성하고 핵심 키워드는 **볼드체**로 강조해줘.`;
+[작성 요구사항]
+### 📊 1. 시장 총괄 동향
+### 📰 2. 주요 기업 변동 및 게임 프로젝트 뉴스 분석
+### 💡 3. 구직자 및 인사담당자 시사점
+
+위 3개 섹션 구조로 작성하고 핵심 키워드는 **볼드체**로 강조해줘.`;
+}
+
+function parseAiReportToHtml(markdownText) {
+  const sections = markdownText.split(/(?=\n###? )/g);
+  let html = '';
+
+  sections.forEach(sec => {
+    const trimmed = sec.trim();
+    if (!trimmed) return;
+
+    let lines = trimmed.split('\n');
+    let title = '';
+    let bodyLines = [];
+
+    if (lines[0].startsWith('#')) {
+      title = lines[0].replace(/^#+\s*/, '');
+      bodyLines = lines.slice(1);
+    } else {
+      bodyLines = lines;
+    }
+
+    let bodyHtml = bodyLines.join('\n')
+      .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+      .replace(/^\s*[\-\*]\s+(.*)$/gim, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+      .replace(/\n\n/g, '<br>');
+
+    if (title) {
+      html += `
+        <div class="ai-section-card">
+          <div class="ai-section-title">${escapeHtml(title)}</div>
+          <div class="ai-section-body">${bodyHtml}</div>
+        </div>
+      `;
+    } else {
+      html += `<div class="ai-section-body" style="padding: 6px 0;">${bodyHtml}</div>`;
+    }
+  });
+
+  return html;
 }
 
 async function generateAiComment(){
@@ -834,34 +976,23 @@ async function generateAiComment(){
   const box = document.getElementById('aiCommentBox');
   const btn = document.getElementById('aiCommentBtn');
   box.style.display = 'block';
-  box.innerHTML = '🔍 <b>Gemini AI</b>가 최신 게임 업계 뉴스, 신작 프로젝트 및 채용 데이터를 종합 분석하고 있습니다...';
+  box.innerHTML = '<div class="placeholder-hint">🔍 <b>Gemini AI</b>가 최신 게임 업계 뉴스 및 프로젝트 데이터를 종합 분석하고 있습니다...</div>';
   btn.disabled = true;
 
   try{
-    // Gemini 2.5 Flash 모델 REST API 엔드포인트
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-
+    const promptText = buildAiPrompt(stats);
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [
-          { parts: [{ text: buildAiPrompt(stats) }] }
-        ],
-        // Google Search Grounding 도구 활성화 (실시간 업계 뉴스 및 프로젝트 검색)
-        tools: [
-          { googleSearch: {} }
-        ]
+        contents: [{ parts: [{ text: promptText }] }],
+        tools: [{ googleSearch: {} }]
       })
     });
 
     if(!res.ok){
-      const errData = await res.json().catch(()=>({}));
-      if(res.status === 400 || res.status === 403){
-        box.textContent = 'API 키가 올바르지 않거나 권한이 없습니다. 아래 "API 키 재설정" 버튼을 눌러 다시 입력해 주세요.';
-      }else{
-        box.textContent = `분석 생성 실패 (${res.status}): ${errData.error?.message || res.statusText}`;
-      }
+      box.textContent = `분석 생성 실패 (${res.status})`;
       return;
     }
 
@@ -870,22 +1001,174 @@ async function generateAiComment(){
     const text = candidate?.content?.parts?.map(p => p.text).join('\n').trim();
 
     if(text){
-      // 마크다운 볼드(**) 및 줄바꿈 처리
-      const formattedText = text
-        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-        .replace(/\n/g, '<br>');
-      box.innerHTML = formattedText;
+      box.innerHTML = parseAiReportToHtml(text);
     } else {
       box.textContent = '응답 데이터를 생성하지 못했습니다.';
     }
   }catch(err){
-    box.textContent = '네트워크 오류로 분석 생성에 실패했습니다: ' + err.message;
+    box.textContent = '오류 발생: ' + err.message;
   }finally{
     btn.disabled = false;
   }
 }
 
-/* ---------- 기업별/공고별 탭 (검색+정렬+상세) ---------- */
+/* ---------- 월별 리포트 탭 & 팝업 모달 ---------- */
+function renderReportView(){
+  const container = document.getElementById('reportListContainer');
+  if(snapshots.length < 2){
+    container.innerHTML = '<div class="placeholder-hint">스냅샷이 2개 이상 쌓이면(다음 달부터) 월별 리포트 보관함이 자동으로 활성화돼요.</div>';
+    return;
+  }
+
+  let itemsHtml = '<div class="report-card-list">';
+  for(let i = snapshots.length - 1; i >= 1; i--){
+    const cur = snapshots[i];
+    const prev = snapshots[i-1];
+    const dateParts = cur.date.split('-');
+    const yearMonth = `${dateParts[0]}년 ${parseInt(dateParts[1])}월`;
+
+    itemsHtml += `
+      <div class="report-item-card" onclick="openReportModal(${i})">
+        <div>
+          <div class="report-item-title">📄 ${yearMonth} 게임 채용 트렌드 리포트</div>
+          <div class="report-item-sub">수집 기준일: ${cur.date} (전월: ${prev.date}) · 총 ${cur.jobs.length}건 공고</div>
+        </div>
+        <div class="report-badge">리포트 열기 ↗</div>
+      </div>
+    `;
+  }
+  itemsHtml += '</div>';
+  container.innerHTML = itemsHtml;
+}
+
+async function openReportModal(snapIndex){
+  const modal = document.getElementById('reportModal');
+  const titleEl = document.getElementById('modalTitle');
+  const bodyEl = document.getElementById('modalBody');
+
+  const cur = snapshots[snapIndex];
+  const prev = snapshots[snapIndex-1];
+  const stats = computeMonthlyStats(snapIndex);
+
+  const reportTitle = `${cur.date} 월간 게임 채용 분석 리포트 (${prev.date} 대비)`;
+  titleEl.textContent = reportTitle;
+  bodyEl.innerHTML = '<div class="placeholder-hint">🔍 리포트 데이터 및 AI 분석을 불러오는 중입니다...</div>';
+  modal.classList.add('active');
+
+  // 프롬프트 및 분석 기준 정보 템플릿
+  const promptCriteriaText = stats ? buildAiPrompt(stats) : '데이터가 부족하여 프롬프트를 생성할 수 없습니다.';
+  const promptAccordionHtml = `
+    <details class="ai-prompt-accordion">
+      <summary>📋 데이터 분석 기준 및 AI 프롬프트 보기</summary>
+      <div class="ai-prompt-content">
+<b>[데이터 수집 및 분석 기준]</b>
+1. 수집 대상: 게임잡(gamejob.co.kr) 전체 공개 채용 공고
+2. 분석 주기: 월간 단위 스냅샷 비교 (${prev.date} vs ${cur.date})
+3. 직군 분류: 제목 키워드 및 상세 페이지 모집분야 크롤링 데이터 (개발, 아트, 기획, QA, 사업 등)
+4. 외부 이슈 결합: Google Search Grounding을 통해 공고 변화가 큰 기업의 최신 뉴스, 신작 게임 프로젝트 발표, 공채 일정 등 실시간 수집 및 원인 분석
+
+<b>[실제 AI 입력 프롬프트]</b>
+${escapeHtml(promptCriteriaText)}
+      </div>
+    </details>
+  `;
+
+  let reportTextForDownload = '';
+
+  // 1. 저장된 마크다운 리포트 파일 요청
+  try {
+    const reportRes = await fetch(`data/reports/${cur.date}_ai_analysis.md`, {cache:'no-store'});
+    if(reportRes.ok){
+      const mdText = await reportRes.text();
+      reportTextForDownload = `# ${reportTitle}\n\n` + mdText;
+      bodyEl.innerHTML = parseAiReportToHtml(mdText) + promptAccordionHtml;
+
+      currentReportData = { date: cur.date, title: reportTitle, text: reportTextForDownload };
+      return;
+    }
+  } catch(e) {}
+
+  // 2. 저장된 파일이 없는 경우 기본 수치 리포트
+  if(stats){
+    reportTextForDownload = `# ${reportTitle}\n\n` +
+      `- 전체 공고: ${stats.latestTotal}건 (전월 대비 ${stats.totalDelta>=0?'+':''}${stats.totalDelta}건)\n` +
+      (stats.compGain ? `- 공고 최다 증가 기업: ${stats.compGain.name} (+${stats.compGain.delta}건)\n` : '') +
+      (stats.compDrop ? `- 공고 최다 감소 기업: ${stats.compDrop.name} (${stats.compDrop.delta}건)\n` : '');
+
+    let fallbackHtml = `
+      <div class="ai-section-card">
+        <div class="ai-section-title">📊 채용 공고 요약</div>
+        <div class="ai-section-body">
+          <ul>
+            <li>전체 채용 공고: <b>${stats.latestTotal}건</b> (전월 대비 <b>${stats.totalDelta>=0?'+':''}${stats.totalDelta}건</b>)</li>
+            ${stats.compGain ? `<li>가장 공고가 많이 늘어난 기업: <b>${escapeHtml(stats.compGain.name)}</b> (+${stats.compGain.delta}건)</li>` : ''}
+            ${stats.compDrop ? `<li>가장 공고가 많이 줄어든 기업: <b>${escapeHtml(stats.compDrop.name)}</b> (${stats.compDrop.delta}건)</li>` : ''}
+          </ul>
+        </div>
+      </div>
+      <div class="ai-section-card">
+        <div class="ai-section-title">💡 주요 직군 증감 현황</div>
+        <div class="ai-section-body">
+          <ul>
+            ${stats.groupDeltas.map(d=>`<li><b>${d.g}</b>: ${d.cur}건 (전월 대비 ${d.delta>=0?'+':''}${d.delta}건)</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+      ${promptAccordionHtml}
+    `;
+    bodyEl.innerHTML = fallbackHtml;
+    currentReportData = { date: cur.date, title: reportTitle, text: reportTextForDownload };
+  } else {
+    bodyEl.innerHTML = '<div class="placeholder-hint">리포트 데이터를 불러올 수 없습니다.</div>';
+  }
+}
+
+function closeReportModal(){
+  document.getElementById('reportModal').classList.remove('active');
+}
+
+/* 리포트 다운로드 기능 (.md 파일 다운로드) */
+function downloadReport(){
+  if(!currentReportData.text){
+    alert('다운로드할 리포트 내용이 없습니다.');
+    return;
+  }
+  const blob = new Blob([currentReportData.text], { type: 'text/markdown;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${currentReportData.date}_게임채용_리포트.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* 리포트 공유하기 기능 */
+function shareReport(){
+  const shareTitle = currentReportData.title || '게임잡 채용 트래커 월간 리포트';
+  const shareUrl = window.location.href;
+
+  if (navigator.share) {
+    navigator.share({
+      title: shareTitle,
+      text: `${shareTitle}\n\n게임 업계 최신 채용 데이터와 뉴스 분석 리포트를 확인해 보세요!`,
+      url: shareUrl
+    }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert('대시보드 링크(URL)가 클립보드에 복사되었습니다! 원하시는 곳에 공유해 보세요.');
+    }).catch(() => {
+      alert('주소 복사에 실패했습니다. 브라우저 주소창의 URL을 직접 복사해 주세요.');
+    });
+  }
+}
+
+document.getElementById('reportModal').addEventListener('click', (e)=>{
+  if(e.target === document.getElementById('reportModal')){
+    closeReportModal();
+  }
+});
+
+/* ---------- 기업별/공고별 탭 ---------- */
 function setupEntityView(kind){
   const searchEl = document.getElementById(kind+'Search');
   searchEl.oninput = ()=> drawEntityTable(kind);
@@ -950,14 +1233,13 @@ function renderEmploymentDonut(entries){
   }).join('');
 }
 
-/* ---------- 상세 패널 (드릴다운) ---------- */
+/* ---------- 상세 패널 ---------- */
 function groupCounts(jobs, getKeys){
   const counts = {};
   jobs.forEach(j=> getKeys(j).forEach(k=>{ if(k) counts[k]=(counts[k]||0)+1; }));
   return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
 }
 
-/* TOP3를 시상대(포디움) 형태로 보여줌: 2등-1등-3등 순서 배치, 1등 강조 */
 function podiumHtml(sortedEntries){
   const top3 = sortedEntries.slice(0,3);
   if(!top3.length) return '<div class="placeholder-hint">데이터 없음</div>';
@@ -986,7 +1268,6 @@ const GROUP_COLORS = {
 };
 const GROUP_EMOJI_MAP = {'개발':'💻','아트':'🎨','기획':'📋','QA':'🧪','사업':'📈','지원부서':'🗂️'};
 
-/* 특정 회사의, 스냅샷별 큰 직무 그룹(개발/아트/기획/QA/사업/지원부서) 카운트 추이 */
 function buildCompanyGroupSeries(companyName){
   const result = {};
   GROUP_ORDER.forEach(g=> result[g] = []);
@@ -1004,7 +1285,6 @@ function buildCompanyGroupSeries(companyName){
 
 function selectEntity(kind, name){
   selected[kind] = (selected[kind]===name) ? null : name;
-  // 홈 화면의 랭킹도 선택 표시 갱신
   renderHomeRankings();
   if(kind==='company') drawEntityTable('company');
   if(kind==='category') drawEntityTable('category');
@@ -1100,7 +1380,6 @@ function drawDetail(kind){
   }
 }
 
-/* 기업별 상세: 주식 상세페이지 스타일 — 핵심정보 → 직무 구성(도넛) → 세부 직종 → 채용 추이 → 공고 목록 */
 function companyKeyInfoGrid(entry){
   const items = [
     ['공고 수', entry.latest + '건'],
@@ -1198,7 +1477,6 @@ function drawCompanyDetail(panel, name, entry, jobsHere, chartKey){
   destroyChart(chartKey+'Group');
   destroyChart(chartKey+'Donut');
 
-  // 직무 구성 도넛차트 (공고 하나당 대표 직무 1개로 집계해서 비율이 100%가 되게 함)
   if(jobsHere.length){
     const donutCounts = {}; GROUP_ORDER.forEach(g=> donutCounts[g]=0);
     jobsHere.forEach(j=>{
