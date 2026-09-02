@@ -245,20 +245,6 @@
     background:var(--blue);color:#fff;border:none;border-radius:8px;
     padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;
   }
-
-  .ai-prompt-accordion{
-    margin-top:20px;background:var(--surface);border:1px solid var(--border);
-    border-radius:12px;padding:12px 16px;font-size:13px;
-  }
-  .ai-prompt-accordion summary{
-    font-weight:700;color:var(--muted);cursor:pointer;user-select:none;
-  }
-  .ai-prompt-accordion summary:hover{color:var(--text);}
-  .ai-prompt-content{
-    margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);
-    white-space:pre-wrap;color:#4e5968;font-size:12.5px;line-height:1.6;
-    background:#fff;padding:12px;border-radius:8px;
-  }
 </style>
 </head>
 <body>
@@ -995,9 +981,13 @@ async function openReportModal(snapIndex){
 /* 수동 브라우저 Gemini API 리포트 생성 함수 */
 async function triggerBrowserGeminiAnalysis(snapIndex){
   let key = localStorage.getItem('gemini_api_key');
-  if(!key){
-    key = window.prompt('Gemini API 키를 입력하세요 (aistudio.google.com 에서 발급).\n브라우저에만 안전하게 저장됩니다.');
-    if(key) localStorage.setItem('gemini_api_key', key.trim());
+  
+  if(!key || key.length < 10){
+    key = window.prompt('Gemini API 키를 입력하세요 (aistudio.google.com 발급).\n브라우저에 저장됩니다.');
+    if(key) {
+      key = key.trim();
+      localStorage.setItem('gemini_api_key', key);
+    }
   }
   if(!key) return;
 
@@ -1005,7 +995,7 @@ async function triggerBrowserGeminiAnalysis(snapIndex){
   const curSnap = snapshots[snapIndex];
   const bodyEl = document.getElementById('modalBody');
 
-  bodyEl.innerHTML = '<div class="placeholder-hint">🔍 <b>Gemini AI</b>가 최신 게임 업계 뉴스 및 프로젝트 데이터를 실시간 종합 분석하고 있습니다... (약 10~15초 소요)</div>';
+  bodyEl.innerHTML = '<div class="placeholder-hint">🔍 <b>Gemini AI</b>가 실시간 분석하고 있습니다... (약 10~15초 소요)</div>';
 
   const incComp = stats.compGain ? stats.compGain.name : '없음';
   const dropComp = stats.compDrop ? stats.compDrop.name : '없음';
@@ -1034,7 +1024,10 @@ ${incTitlesStr}
 위 3개 섹션 구조로 구체적인 신작 프로젝트명, 기술 스택, 업계 뉴스 원인을 밝혀서 작성해줘. 핵심 키워드는 **볼드체**로 강조해줘.`;
 
   try {
+    // 🔥 반드시 1.5-flash 모델을 호출하도록 고정 🔥
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+    console.log("호출 주소:", endpoint); // 개발자 도구 디버깅용
+
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1045,7 +1038,12 @@ ${incTitlesStr}
     });
 
     if(!res.ok){
-      bodyEl.innerHTML = `<div class="placeholder-hint">오류 발생 (${res.status}): API 키를 확인해 주세요.</div>`;
+      localStorage.removeItem('gemini_api_key');
+      bodyEl.innerHTML = `
+        <div class="placeholder-hint" style="color:var(--up);">
+          ⚠️ API 호출 실패 (${res.status}): 저장된 API 키가 올바르지 않거나 권한이 없습니다.<br>
+          <button class="manual-generate-btn" style="margin-top:10px;" onclick="triggerBrowserGeminiAnalysis(${snapIndex})">🔑 API 키 재입력 후 다시 시도</button>
+        </div>`;
       return;
     }
 
