@@ -1,1430 +1,931 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>게임잡 채용 트래커</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<style>
-  :root{
-    --bg:#ffffff;
-    --surface:#f7f8fa;
-    --surface-2:#f2f3f5;
-    --border:#eaebee;
-    --text:#191f28;
-    --muted:#8b95a1;
-    --blue:#3182f6;
-    --blue-soft:#eef4ff;
-    --up:#f04452;
-    --up-soft:#fef0f1;
-    --down:#3182f6;
-    --down-soft:#eef4ff;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg);
-    color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic','Apple SD Gothic Neo',sans-serif;
-    line-height:1.5;
-    font-size:14.5px;
-  }
-  .wrap{max-width:1040px;margin:0 auto;padding:24px 20px 100px;}
+"""
+gamejob_tracker.py
+게임잡 채용공고 트래킹 + 구글 뉴스/게임잡 뉴스/게임메카 크롤링 + Gemini AI 딥다이브 월간 리포트 자동 생성 스크립트
 
-  header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:20px;}
-  header h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-0.01em;}
-  .header-logo{height:26px;width:auto;object-fit:cover;object-position:center;vertical-align:middle;}
-  .header-title{display:flex;align-items:center;gap:10px;}
-  header p{margin:2px 0 0;color:var(--muted);font-size:12.5px;}
+기능
+----
+1. 게임잡 전체 채용공고 리스트 수집
+2. 직무별(모바일 상세 페이지 파싱 + 키워드 분류), 기업별 공고 수 집계
+3. 기업 로고, 대표자, 설립연도, 대표게임, 홈페이지 등 기업 정보 자동 수집 및 캐싱
+4. [신규] 구글 뉴스 RSS 실시간 크롤링 (게임 업계 이슈 및 공고 변동 TOP 기업 뉴스)
+5. [신규] 게임잡 공식 뉴스 및 게임메카 갤러리 헤드라인 크롤링
+6. 채용 데이터 + 실제 공고 제목 + 크롤링된 뉴스를 결합하여 Gemini AI 딥다이브 분석 리포트 자동 생성
+7. 대시보드(index.html) 연동용 index.json 및 리포트 파일 자동 저장
+"""
 
-  .upload-btn{
-    position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:6px;
-    background:var(--blue);color:#fff;border:none;border-radius:10px;
-    padding:9px 15px;font-size:12.5px;font-weight:600;cursor:pointer;
-  }
-  .upload-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+import argparse
+import csv
+import json
+import os
+import re
+import time
+import urllib.parse
+import xml.etree.ElementTree as ET
+from collections import Counter
+from datetime import datetime
+from pathlib import Path
 
-  .empty{text-align:center;padding:120px 20px;color:var(--muted);}
-  .empty strong{color:var(--text);display:block;font-size:17px;margin-bottom:8px;font-weight:700;}
+import requests
+from bs4 import BeautifulSoup
 
-  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;}
-  .stat-card{background:var(--surface);border-radius:12px;padding:14px 16px;}
-  .stat-card .label{color:var(--muted);font-size:12px;font-weight:500;margin-bottom:4px;}
-  .stat-card .num{font-size:21px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;}
-  .stat-card .num.up{color:var(--up);}
-  .stat-card .num.down{color:var(--down);}
-  @media (max-width:640px){.stat-row{grid-template-columns:1fr;}}
+# ----------------------------------------------------------------------------
+# 기본 설정 및 경로
+# ----------------------------------------------------------------------------
 
-  /* 상단 탭 */
-  .nav-tabs{display:flex;gap:22px;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto;}
-  .nav-tab{
-    background:none;border:none;padding:11px 0;font-size:15px;font-weight:700;
-    color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;
-  }
-  .nav-tab.active{color:var(--text);border-bottom-color:var(--text);}
-  .view{display:none;}
-  .view.active{display:block;}
+BASE = "https://www.gamejob.co.kr"
+MAIN_LIST_URL = BASE + "/Recruit/joblist?menucode=searchdetail"
 
-  .panel{background:var(--surface);border-radius:14px;padding:16px 18px;margin-bottom:16px;}
-  .panel-title{font-size:13.5px;font-weight:700;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;}
-  .panel-title .see-all{font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;}
-  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-  @media (max-width:760px){.grid-2{grid-template-columns:1fr;}}
-  canvas{max-width:100%;}
+LIST_URL_CANDIDATES = [
+    BASE + "/recruit/_GI_Job_List?Page={page}",
+    BASE + "/Recruit/_GI_Job_List?Page={page}",
+    BASE + "/recruit/_GI_Job_List?PageIndex={page}",
+    BASE + "/recruit/_GI_Job_List?page={page}",
+    BASE + "/recruit/_GI_Job_List?CurPage={page}",
+    BASE + "/recruit/_GI_Job_List?GI_Page={page}",
+    BASE + "/Recruit/joblist?menucode=searchall&Page={page}",
+    BASE + "/Recruit/joblist?menucode=searchdetail&Page={page}",
+]
 
-  .search-input{
-    width:100%;padding:10px 13px;background:var(--surface);border:1px solid var(--border);
-    border-radius:10px;color:var(--text);font-size:13.5px;margin-bottom:10px;
-  }
-  .search-input:focus{outline:1px solid var(--blue);}
-
-  .sort-chips{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
-  .chip{background:var(--surface-2);border:none;border-radius:999px;padding:6px 12px;
-    font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;}
-  .chip.active{background:var(--text);color:#fff;}
-
-  /* 랭킹 테이블 */
-  table.rank{width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed;}
-  table.rank th{
-    text-align:right;color:var(--muted);font-weight:600;font-size:11px;
-    padding:6px 8px;border-bottom:1px solid var(--border);
-  }
-  table.rank th:first-child, table.rank th:nth-child(2){text-align:left;}
-  table.rank td{padding:10px 8px;border-bottom:1px solid var(--border);text-align:right;vertical-align:middle;overflow:hidden;}
-  table.rank th:nth-child(1), table.rank td:nth-child(1){width:30px;text-align:center;color:var(--muted);font-size:12px;}
-  table.rank th:nth-child(2), table.rank td:nth-child(2){width:auto;}
-  table.rank th:nth-child(3), table.rank td:nth-child(3){width:70px;}
-  table.rank th:nth-child(4), table.rank td:nth-child(4){width:56px;}
-  table.rank th:nth-child(5), table.rank td:nth-child(5){width:120px;}
-  table.rank td.name-cell{text-align:left;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;}
-  table.rank tbody tr{cursor:pointer;}
-  table.rank tbody tr:hover{background:#fff;}
-  table.rank tbody tr.selected{background:var(--blue-soft);}
-  .spark-cell svg{display:block;margin-left:auto;}
-  .delta-up{color:var(--up);font-weight:700;}
-  .delta-down{color:var(--down);font-weight:700;}
-  .delta-flat{color:#b0b8c1;}
-  .delta-new{color:var(--up);font-weight:700;font-size:11.5px;}
-  .row-count{color:var(--muted);font-size:11.5px;margin-top:8px;}
-
-  /* 상세 패널 */
-  .detail-panel{background:var(--surface);border-radius:14px;padding:18px;margin-bottom:16px;display:none;}
-  .detail-panel.show{display:block;}
-  .dp-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;}
-  .dp-title{font-size:17px;font-weight:700;}
-  .dp-count{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;}
-  .dp-sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
-  .dp-close{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;font-weight:600;}
-  .dp-back{background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;font-weight:700;padding:0;}
-  .dp-back:hover{text-decoration:underline;}
-  .breakdown-lists{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0;}
-  @media (max-width:700px){.breakdown-lists{grid-template-columns:1fr;}}
-
-  .dp-homepage-btn{
-    border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12.5px;
-    font-weight:700;color:var(--text);text-decoration:none;
-  }
-  .dp-homepage-btn:hover{background:var(--surface-2);}
-
-  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;margin-top:16px;}
-  .info-item-wide{grid-column:1 / -1;}
-  .info-label{font-size:12px;color:var(--muted);margin-bottom:3px;}
-  .info-value{font-size:14.5px;font-weight:700;color:var(--text);}
-
-  .stock-section{margin-top:26px;}
-  .stock-section h3{font-size:14px;font-weight:700;margin:0 0 12px;}
-  .chart-subtitle{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px;}
-
-  .donut-section{display:flex;gap:24px;align-items:center;flex-wrap:wrap;}
-  .donut-canvas-wrap{width:150px;height:150px;flex-shrink:0;}
-  .donut-legend{flex:1;min-width:180px;}
-  .donut-legend-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
-  .donut-legend-row:last-child{border-bottom:none;}
-  .donut-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
-
-  .podium{display:flex;justify-content:center;align-items:flex-end;gap:12px;margin-top:10px;}
-  .podium-item{
-    background:var(--surface-2);border-radius:12px;padding:14px 10px;text-align:center;
-    flex:1;max-width:150px;
-  }
-  .podium-item.first{
-    background:#fff7e0;border:2px solid #f2b84b;padding-top:20px;padding-bottom:18px;
-    transform:translateY(-8px);
-  }
-  .podium-medal{font-size:26px;line-height:1;}
-  .podium-item.first .podium-medal{font-size:32px;}
-  .podium-name{font-weight:700;font-size:12.5px;margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .podium-count{font-size:12px;color:var(--muted);margin-top:3px;}
-
-  .insight-panel{background:var(--blue-soft);}
-  .insight-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;}
-  .insight-list li{
-    font-size:13.5px;line-height:1.5;padding-left:20px;position:relative;
-  }
-  .insight-list li::before{content:'•';position:absolute;left:4px;color:var(--blue);font-weight:700;}
-  .insight-list b{font-weight:700;}
-  .insight-list .up-text{color:var(--up);font-weight:700;}
-  .insight-list .down-text{color:var(--down);font-weight:700;}
-  .insight-footnote{margin-top:12px;font-size:11px;color:var(--muted);}
-
-  .bd-block h4{font-size:12px;color:var(--muted);font-weight:700;margin:0 0 8px;}
-  .bd-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);}
-  .bd-row:last-child{border-bottom:none;}
-  .detail-jobs .dj-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
-  .detail-jobs .dj-row:last-child{border-bottom:none;}
-  .dj-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
-  .dj-meta{color:var(--muted);font-size:11.5px;flex-shrink:0;}
-  .placeholder-hint{color:var(--muted);font-size:13px;text-align:center;padding:20px 0;}
-
-  /* 월별 리포트 카드 UI */
-  .report-card-list{display:flex;flex-direction:column;gap:12px;margin-top:10px;}
-  .report-item-card{
-    background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px;
-    display:flex;justify-content:space-between;align-items:center;cursor:pointer;
-    transition:all 0.15s ease;
-  }
-  .report-item-card:hover{border-color:var(--blue);box-shadow:0 4px 12px rgba(49,130,246,0.08);transform:translateY(-1px);}
-  .report-item-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;}
-  .report-item-sub{font-size:12.5px;color:var(--muted);}
-  .report-badge{
-    background:var(--blue-soft);color:var(--blue);font-size:12px;font-weight:700;
-    padding:4px 10px;border-radius:20px;white-space:nowrap;
-  }
-
-  /* 모달 팝업 스타일 */
-  .modal-overlay{
-    position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;
-    display:flex;align-items:center;justify-content:center;padding:20px;
-    opacity:0;pointer-events:none;transition:opacity 0.2s ease;
-  }
-  .modal-overlay.active{opacity:1;pointer-events:auto;}
-  .modal-container{
-    background:#fff;width:100%;max-width:780px;max-height:85vh;
-    border-radius:18px;box-shadow:0 12px 36px rgba(0,0,0,0.18);
-    display:flex;flex-direction:column;overflow:hidden;
-    transform:translateY(12px);transition:transform 0.2s ease;
-  }
-  .modal-overlay.active .modal-container{transform:translateY(0);}
-  .modal-header{
-    padding:16px 22px;border-bottom:1px solid var(--border);
-    display:flex;justify-content:space-between;align-items:center;background:#fff;gap:12px;
-  }
-  .modal-title{font-size:16px;font-weight:700;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .modal-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-  .modal-btn{
-    background:var(--surface);border:1px solid var(--border);border-radius:8px;
-    padding:6px 11px;font-size:12px;font-weight:700;color:var(--text);cursor:pointer;
-    display:inline-flex;align-items:center;gap:4px;
-  }
-  .modal-btn:hover{background:var(--surface-2);}
-  .modal-btn-blue{background:var(--blue);color:#fff;border:none;}
-  .modal-btn-blue:hover{background:#2872e5;}
-  .modal-close-btn{background:none;border:none;font-size:18px;color:var(--muted);cursor:pointer;font-weight:700;padding:0 4px;}
-  .modal-body{padding:22px;overflow-y:auto;line-height:1.7;font-size:14px;color:#333d4b;}
-
-  /* AI 리포트 전용 카드 UI 스타일 */
-  .ai-section-card{
-    background:var(--surface);border-radius:12px;padding:16px 18px;margin-bottom:14px;
-    border:1px solid var(--border);
-  }
-  .ai-section-title{
-    font-size:15px;font-weight:700;color:var(--text);margin:0 0 10px 0;
-  }
-  .ai-section-body{font-size:13.5px;line-height:1.7;color:#333d4b;}
-  .ai-section-body ul{margin:6px 0;padding-left:18px;}
-  .ai-section-body li{margin-bottom:6px;}
-  .ai-section-body b{color:var(--text);background:#eef4ff;padding:1px 5px;border-radius:4px;}
-
-  /* 아코디언 프롬프트 공개 박스 */
-  .ai-prompt-accordion{
-    margin-top:20px;background:var(--surface);border:1px solid var(--border);
-    border-radius:12px;padding:12px 16px;font-size:13px;
-  }
-  .ai-prompt-accordion summary{
-    font-weight:700;color:var(--muted);cursor:pointer;user-select:none;
-  }
-  .ai-prompt-accordion summary:hover{color:var(--text);}
-  .ai-prompt-content{
-    margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);
-    white-space:pre-wrap;color:#4e5968;font-size:12.5px;line-height:1.6;
-    background:#fff;padding:12px;border-radius:8px;
-  }
-</style>
-</head>
-<body>
-<div class="wrap">
-
-  <header>
-    <div class="header-title">
-      <img src="https://i.gamejob.co.kr/pc/images/gamejob_share.png" alt="GAMEJOB" class="header-logo">
-      <h1>게임잡 채용 트래커</h1>
-    </div>
-    <label class="upload-btn" id="uploadBtn" style="display:none;">
-      CSV 불러오기
-      <input type="file" id="fileInput" accept=".csv" multiple>
-    </label>
-  </header>
-
-  <div id="emptyState" class="empty">
-    <strong>데이터를 불러오는 중이에요...</strong>
-    잠시 후에도 안 뜨면 GitHub Actions가 아직 한 번도 실행되지 않았을 수 있어요.
-  </div>
-
-  <div id="autoLoadNote" style="display:none;font-size:12px;color:var(--muted);margin:-10px 0 14px;">
-    © KONGSTUDIOS. All rights reserved.
-  </div>
-
-  <div id="content" style="display:none;">
-    <div class="stat-row" id="statRow"></div>
-
-    <div class="nav-tabs">
-      <button class="nav-tab active" data-view="home">홈</button>
-      <button class="nav-tab" data-view="company">기업별</button>
-      <button class="nav-tab" data-view="category">공고별</button>
-      <button class="nav-tab" data-view="employment">고용형태별</button>
-      <button class="nav-tab" data-view="report">월별 리포트</button>
-    </div>
-
-    <!-- 홈 -->
-    <div class="view active" id="view-home">
-      <div class="panel" id="homeTrendPanel" style="display:none;">
-        <div class="panel-title">월별 전체 공고 수 추이</div>
-        <canvas id="trendChart" height="70"></canvas>
-      </div>
-      <div class="grid-2">
-        <div class="panel">
-          <div class="panel-title">공고 많은 직무 TOP 10 <span class="see-all" data-goto="category">전체보기</span></div>
-          <table class="rank" id="homeCategoryTable">
-            <thead><tr><th></th><th>직무</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div class="panel">
-          <div class="panel-title">공고 많은 기업 TOP 10 <span class="see-all" data-goto="company">전체보기</span></div>
-          <table class="rank" id="homeCompanyTable">
-            <thead><tr><th></th><th>기업</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="panel insight-panel" id="insightPanel" style="display:none;">
-        <div class="panel-title">📝 이번 달 채용 트렌드 요약</div>
-        <ul class="insight-list" id="insightList"></ul>
-        <div class="insight-footnote">데이터 기반으로 자동 생성된 요약이에요. 상단 '월별 리포트' 탭에서 AI 딥 분석을 확인할 수 있어요.</div>
-      </div>
-      <div class="panel" id="insightPlaceholder" style="display:none;">
-        <div class="placeholder-hint">스냅샷이 2개 이상 쌓이면(다음 달부터) 여기에 트렌드 요약이 자동으로 나와요.</div>
-      </div>
-    </div>
-
-    <!-- 기업별 -->
-    <div class="view" id="view-company">
-      <div class="detail-panel" id="companyDetail"></div>
-      <div id="companyListSection">
-        <input type="text" class="search-input" id="companySearch" placeholder="기업명 검색...">
-        <div class="sort-chips" data-kind="company">
-          <button class="chip active" data-sort="count">공고 많은순</button>
-          <button class="chip" data-sort="increase">증가순</button>
-          <button class="chip" data-sort="decrease">감소순</button>
-          <button class="chip" data-sort="name">이름순</button>
-        </div>
-        <table class="rank" id="companyRankTable">
-          <thead><tr><th></th><th>기업</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
-          <tbody id="companyRankBody"></tbody>
-        </table>
-        <div class="row-count" id="companyRowCount"></div>
-      </div>
-    </div>
-
-    <!-- 공고별(직종) -->
-    <div class="view" id="view-category">
-      <div class="detail-panel" id="categoryDetail"></div>
-      <input type="text" class="search-input" id="categorySearch" placeholder="직무 검색...">
-      <div class="sort-chips" data-kind="category">
-        <button class="chip active" data-sort="count">공고 많은순</button>
-        <button class="chip" data-sort="increase">증가순</button>
-        <button class="chip" data-sort="decrease">감소순</button>
-        <button class="chip" data-sort="name">이름순</button>
-      </div>
-      <table class="rank" id="categoryRankTable">
-        <thead><tr><th></th><th>직무</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
-        <tbody id="categoryRankBody"></tbody>
-      </table>
-      <div class="row-count" id="categoryRowCount"></div>
-    </div>
-
-    <!-- 고용형태별 -->
-    <div class="view" id="view-employment">
-      <div class="detail-panel" id="employmentDetail"></div>
-      <div class="panel">
-        <div class="panel-title">고용형태별 비율</div>
-        <div class="donut-section">
-          <div class="donut-canvas-wrap"><canvas id="employmentDonutCanvas"></canvas></div>
-          <div class="donut-legend" id="employmentDonutLegend"></div>
-        </div>
-      </div>
-      <table class="rank" id="employmentRankTable">
-        <thead><tr><th></th><th>고용형태</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
-        <tbody id="employmentRankBody"></tbody>
-      </table>
-    </div>
-
-    <!-- 월별 리포트 -->
-    <div class="view" id="view-report">
-      <div class="panel">
-        <div class="panel-title">📅 월별 AI 분석 리포트 보관함</div>
-        <div id="reportListContainer">
-          <div class="placeholder-hint">스냅샷 데이터를 확인하고 있어요...</div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- 팝업 모달 레이어 -->
-<div class="modal-overlay" id="reportModal">
-  <div class="modal-container">
-    <div class="modal-header">
-      <div class="modal-title" id="modalTitle">월별 분석 리포트</div>
-      <div class="modal-actions">
-        <button class="modal-btn modal-btn-blue" onclick="downloadReport()">📥 다운로드</button>
-        <button class="modal-btn" onclick="shareReport()">🔗 공유하기</button>
-        <button class="modal-close-btn" onclick="closeReportModal()">✕</button>
-      </div>
-    </div>
-    <div class="modal-body" id="modalBody">
-      <div class="placeholder-hint">리포트 내용을 불러오는 중입니다...</div>
-    </div>
-  </div>
-</div>
-
-<script>
-let snapshots = [];
-let charts = {};
-let selected = {company:null, category:null, employment:null};
-let sortStateByKind = {company:'count', category:'count', employment:'count'};
-
-// 모달에 열린 현재 리포트 저장용 변수
-let currentReportData = { date: '', title: '', text: '', prompt: '' };
-
-document.getElementById('fileInput').addEventListener('change', async (e)=>{
-  const files = Array.from(e.target.files);
-  if(!files.length) return;
-  const parsed = await Promise.all(files.map(parseFile));
-  applySnapshots(parsed);
-});
-
-function applySnapshots(parsed){
-  snapshots = parsed.filter(Boolean).sort((a,b)=> a.date.localeCompare(b.date));
-  if(!snapshots.length){
-    alert('csv를 읽지 못했어요. gamejob_tracker.py가 만든 snapshots 폴더의 csv 파일이 맞는지 확인해주세요.');
-    return;
-  }
-  render();
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Referer": MAIN_LIST_URL,
+    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
 }
 
-async function tryAutoLoad(){
-  const host = window.location.hostname;
-  const pathParts = window.location.pathname.split('/').filter(Boolean);
-  if(!host.endsWith('github.io') || !pathParts.length) return false;
+DATA_DIR = Path("data")
+SNAPSHOT_DIR = DATA_DIR / "snapshots"
+DEBUG_DIR = DATA_DIR / "debug"
+REPORT_DIR = DATA_DIR / "reports"
+CATEGORY_CACHE_PATH = DATA_DIR / "job_categories_cache.csv"
+COMPANY_INFO_CACHE_PATH = DATA_DIR / "company_info_cache.csv"
 
-  const owner = host.split('.')[0];
-  const repo = pathParts[0];
+for d in (SNAPSHOT_DIR, DEBUG_DIR, REPORT_DIR):
+    d.mkdir(parents=True, exist_ok=True)
 
-  try{
-    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/data/snapshots`;
-    const res = await fetch(apiUrl, {cache:'no-store'});
-    if(!res.ok) return false;
-    const items = await res.json();
-    const csvFiles = items.filter(it => it.name.endsWith('.csv'));
-    if(!csvFiles.length) return false;
+GI_NO_RE = re.compile(r"GI_Read/View\?GI_No=(\d+)")
+COMPANY_RE = re.compile(r"Company/Detail\?tabcode=1&M=(\d+)")
 
-    const parsed = await Promise.all(csvFiles.map(async (it)=>{
-      const r = await fetch(it.download_url, {cache:'no-store'});
-      if(!r.ok) return null;
-      const text = await r.text();
-      const dateMatch = it.name.match(/(\d{4}-\d{2}-\d{2})/);
-      const date = dateMatch ? dateMatch[1] : it.name;
-      const parsedCsv = Papa.parse(text, {header:true, skipEmptyLines:true});
-      return {date, jobs: parsedCsv.data.filter(row=>row.gi_no)};
-    }));
-
-    applySnapshots(parsed);
-    document.getElementById('autoLoadNote').style.display = 'block';
-    return true;
-  }catch(err){
-    return false;
-  }
+JOB_FUNCTION_KEYWORDS = {
+    "프로그래밍": ["프로그래머", "개발자", "클라이언트", "서버 개발", "엔진", "백엔드",
+              "프론트엔드", "인프라", "DevOps", "데이터 엔지니어", "게임 클라이언트"],
+    "게임기획": ["기획자", "기획", "밸런스", "레벨디자이너", "게임 PM", "사업 PM", "개발 PM"],
+    "아트": ["아티스트", "디자이너", "원화", "모델러", "애니메이터", "이펙트",
+           "UI/UX", "UI Designer", "그래픽", "스파인"],
+    "사운드/영상": ["사운드", "작곡", "음향", "영상"],
+    "QA": ["QA", "테스터", "품질"],
+    "마케팅/CM": ["마케터", "마케팅", "퍼포먼스", "UA", "홍보", "CM", "커뮤니티 매니저"],
+    "사업/전략": ["사업기획", "전략", "BD", "사업개발", "사업 PM"],
+    "경영지원/HR": ["HR", "인사", "채용 담당자", "총무", "재무", "회계", "법무", "경영지원", "피플팀"],
+    "데이터": ["데이터 사이언티스트", "데이터 분석", "데이터 엔지니어"],
 }
 
-window.addEventListener('DOMContentLoaded', async ()=>{
-  const ok = await tryAutoLoad();
-  if(!ok){
-    document.getElementById('uploadBtn').style.display = 'inline-flex';
-    document.getElementById('emptyState').innerHTML =
-      '<strong>자동으로 데이터를 못 불러왔어요</strong>' +
-      'GitHub Actions가 아직 안 돌았거나 로컬에서 열어본 경우일 수 있어요.<br>' +
-      '위쪽 "CSV 불러오기" 버튼으로 직접 올려서 확인할 수 있어요.';
-  }
-});
-
-function parseFile(file){
-  return new Promise((resolve)=>{
-    const dateMatch = file.name.match(/(\d{4}-\d{2}-\d{2})/);
-    const date = dateMatch ? dateMatch[1] : file.name;
-    Papa.parse(file, {
-      header:true, skipEmptyLines:true, encoding:'UTF-8',
-      complete: (res)=> resolve({date, jobs: res.data.filter(r=>r.gi_no)}),
-      error: ()=> resolve(null)
-    });
-  });
-}
-
-function escapeHtml(s){
-  if(s==null) return '';
-  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-function jobCategories(j){
-  if(j.job_categories && j.job_categories.trim()){
-    return j.job_categories.split(';').map(s=>s.trim()).filter(Boolean);
-  }
-  return [j.job_function || '기타/미분류'];
-}
-
-const GROUP_INFO = [
-  ['개발', '💻', ['클라이언트','서버','엔진','AI 개발','플랫폼','인프라','프로그래','개발자','백엔드','프론트','네트워크','기술지원']],
-  ['아트', '🎨', ['디자인','원화','모델링','애니메이션','이펙트','그래픽','아트','일러스트','컨셉','사운드','영상']],
-  ['QA', '🧪', ['QA','테스트','운영','고객','커뮤니티']],
-  ['사업', '📈', ['사업','마케팅','홍보','영업','BD','퍼블리싱','미디어','전략']],
-  ['기획', '📋', ['기획','시나리오','레벨디자인','밸런스']],
-];
-const DEFAULT_GROUP = ['지원부서', '🗂️'];
-
-function classifyBroadGroup(categoryStr){
-  const s = categoryStr || '';
-  for(const [group, emoji, keywords] of GROUP_INFO){
-    if(keywords.some(kw => s.includes(kw))) return [group, emoji];
-  }
-  return DEFAULT_GROUP;
-}
-
-function categoryLabel(name){
-  const [, emoji] = classifyBroadGroup(name);
-  return `${emoji} ${name}`;
-}
-
-function employmentBucket(j){
-  const t = j.employment_type || '';
-  if(t.includes('정규')) return '정규직';
-  if(t.includes('계약')) return '계약직';
-  if(t.includes('인턴')) return '인턴직';
-  if(t.includes('파견')) return '파견직';
-  return '기타';
-}
-
-const KEY_FNS = {
-  company: j => [j.company_name].filter(Boolean),
-  category: jobCategories,
-  employment: j => [employmentBucket(j)],
-};
-
-/* ---------- 진입점 ---------- */
-function render(){
-  document.getElementById('emptyState').style.display='none';
-  document.getElementById('content').style.display='block';
-
-  setupNav();
-  renderStats();
-  renderHomeTrend();
-
-  ['company','category','employment'].forEach(kind=>{
-    buildEntityState(kind);
-  });
-
-  renderHomeRankings();
-  setupEntityView('company');
-  setupEntityView('category');
-  renderEmploymentView();
-  renderInsightSummary();
-  renderReportView();
-}
-
-function setupNav(){
-  document.querySelectorAll('.nav-tab').forEach(btn=>{
-    btn.onclick = ()=>{
-      const view = btn.dataset.view;
-      if(['company','category','employment'].includes(view) && selected[view]){
-        selected[view] = null;
-        if(view==='company' || view==='category') drawEntityTable(view);
-        if(view==='employment') renderEmploymentView();
-        drawDetail(view);
-      }
-      switchView(view);
-    };
-  });
-  document.querySelectorAll('.see-all').forEach(el=>{
-    el.onclick = ()=> switchView(el.dataset.goto);
-  });
-}
-
-function switchView(view){
-  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
-  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+view));
-}
-
-function destroyChart(key){ if(charts[key]){ charts[key].destroy(); delete charts[key]; } }
-
-/* ---------- 상단 요약 ---------- */
-function renderStats(){
-  const latest = snapshots[snapshots.length-1];
-  const prev = snapshots.length>1 ? snapshots[snapshots.length-2] : null;
-  const row = document.getElementById('statRow');
-  let newCount=null, removedCount=null;
-  if(prev){
-    const prevIds = new Set(prev.jobs.map(j=>j.gi_no));
-    const curIds = new Set(latest.jobs.map(j=>j.gi_no));
-    newCount = latest.jobs.filter(j=>!prevIds.has(j.gi_no)).length;
-    removedCount = prev.jobs.filter(j=>!curIds.has(j.gi_no)).length;
-  }
-  row.innerHTML = `
-    <div class="stat-card"><div class="label">전체 공고 (${latest.date})</div><div class="num">${latest.jobs.length}</div></div>
-    <div class="stat-card"><div class="label">신규 등록</div><div class="num ${newCount!=null?'up':''}">${newCount!=null?'+'+newCount:'—'}</div></div>
-    <div class="stat-card"><div class="label">삭제 / 마감</div><div class="num ${removedCount!=null?'down':''}">${removedCount!=null?'-'+removedCount:'—'}</div></div>
-  `;
-}
-
-function renderHomeTrend(){
-  const panel = document.getElementById('homeTrendPanel');
-  if(snapshots.length<2){ panel.style.display='none'; return; }
-  panel.style.display='block';
-  destroyChart('trend');
-  charts.trend = new Chart(document.getElementById('trendChart'), {
-    type:'line',
-    data:{ labels: snapshots.map(s=>s.date), datasets:[{
-      data: snapshots.map(s=>s.jobs.length),
-      borderColor:'#3182f6', backgroundColor:'rgba(49,130,246,0.08)',
-      fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:'#3182f6'
-    }]},
-    options:{ plugins:{legend:{display:false}},
-      scales:{ x:{ticks:{color:'#8b95a1'},grid:{display:false}}, y:{ticks:{color:'#8b95a1'},grid:{color:'#eaebee'}} } }
-  });
-}
-
-/* ---------- 엔티티(기업/직무/고용형태) 공통 로직 ---------- */
-const entityState = {};
-
-function buildSeries(getKeys){
-  const map = {};
-  snapshots.forEach((snap, idx)=>{
-    const counts = {};
-    snap.jobs.forEach(j=>{
-      getKeys(j).forEach(k=>{ if(k) counts[k]=(counts[k]||0)+1; });
-    });
-    Object.keys(counts).forEach(k=>{
-      if(!map[k]) map[k] = new Array(snapshots.length).fill(0);
-      map[k][idx] = counts[k];
-    });
-  });
-  return map;
-}
-
-function buildEntityState(kind){
-  const map = buildSeries(KEY_FNS[kind]);
-
-  let infoMap = {};
-  if(kind==='company'){
-    const latestSnap = snapshots[snapshots.length-1];
-    latestSnap.jobs.forEach(j=>{
-      if(j.company_name && !infoMap[j.company_name]){
-        infoMap[j.company_name] = {
-          logo: j.company_logo_url || null,
-          ceo: j.company_ceo || null,
-          foundedYear: j.company_founded_year || null,
-          flagshipGames: j.company_flagship_games || null,
-          homepage: j.company_homepage || null,
-        };
-      }
-    });
-  }
-
-  const entries = Object.keys(map).map(name=>{
-    const series = map[name];
-    const latest = series[series.length-1];
-    const prev = series.length>1 ? series[series.length-2] : null;
-    const delta = prev!=null ? latest-prev : null;
-    const pct = (delta!=null && prev>0) ? (delta/prev*100) : null;
-    const info = infoMap[name] || {};
-    return {name, series, latest, delta, pct, isNew: prev===0 && latest>0, logo: info.logo || null,
-      ceo: info.ceo || null, foundedYear: info.foundedYear || null,
-      flagshipGames: info.flagshipGames || null, homepage: info.homepage || null};
-  });
-  entityState[kind] = entries;
-}
-
-function sortEntries(entries, sortKey){
-  const arr = [...entries];
-  if(sortKey==='count') arr.sort((a,b)=> b.latest-a.latest);
-  else if(sortKey==='increase') arr.sort((a,b)=> (b.delta??-Infinity)-(a.delta??-Infinity));
-  else if(sortKey==='decrease') arr.sort((a,b)=> (a.delta??Infinity)-(b.delta??Infinity));
-  else if(sortKey==='name') arr.sort((a,b)=> a.name.localeCompare(b.name));
-  return arr;
-}
-
-function sparklineSvg(series){
-  const w=54,h=22,pad=2;
-  const min=Math.min(...series), max=Math.max(...series);
-  const range=(max-min)||1;
-  const step = series.length>1 ? (w-2*pad)/(series.length-1) : 0;
-  const pts = series.map((v,i)=>{
-    const x=pad+i*step, y=h-pad-((v-min)/range)*(h-2*pad);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(' ');
-  const last=series[series.length-1], first=series[0];
-  const color = last>first?'#f04452':(last<first?'#3182f6':'#c7ccd3');
-  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
-}
-
-function deltaCellHtml(e, hasHistory){
-  if(!hasHistory) return '';
-  if(e.isNew) return `<span class="delta-new">NEW</span>`;
-  if(e.delta==null) return `<span class="delta-flat">—</span>`;
-  const cls = e.delta>0?'delta-up':(e.delta<0?'delta-down':'delta-flat');
-  const sign = e.delta>0?'+':'';
-  const pctText = e.pct!=null ? ` (${e.pct>0?'+':''}${e.pct.toFixed(0)}%)` : '';
-  const arrow = e.delta>0?'▲':(e.delta<0?'▼':'');
-  return `<span class="${cls}">${arrow} ${sign}${e.delta}${pctText}</span>`;
-}
-
-function logoImgHtml(e, size){
-  if(!e.logo) return '';
-  return `<img src="${escapeHtml(e.logo)}" alt="" loading="lazy" width="${size}" height="${size}"
-    style="border-radius:6px;object-fit:contain;background:#fff;border:1px solid var(--border);vertical-align:middle;margin-right:8px;flex-shrink:0;"
-    onerror="this.style.display='none'">`;
-}
-
-function renderRankRows(tbodyEl, entries, kind, limit, navigateOnClick){
-  const hasHistory = snapshots.length>1;
-  const list = limit ? entries.slice(0,limit) : entries;
-  tbodyEl.innerHTML = list.map((e,i)=>{
-    const sel = selected[kind]===e.name;
-    const displayName = kind==='category' ? categoryLabel(e.name) : e.name;
-    return `
-      <tr class="${sel?'selected':''}" data-name="${escapeHtml(e.name)}" data-kind="${kind}">
-        <td>${i+1}</td>
-        <td class="name-cell" style="display:flex;align-items:center;min-width:0;">${logoImgHtml(e,20)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">${escapeHtml(displayName)}</span></td>
-        <td class="spark-cell">${hasHistory ? sparklineSvg(e.series) : ''}</td>
-        <td>${e.latest}</td>
-        <td>${deltaCellHtml(e, hasHistory)}</td>
-      </tr>
-    `;
-  }).join('');
-  tbodyEl.querySelectorAll('tr').forEach(tr=>{
-    if(navigateOnClick){
-      tr.onclick = ()=> goToEntityDetail(tr.dataset.kind, tr.dataset.name);
-    }else{
-      tr.onclick = ()=> selectEntity(tr.dataset.kind, tr.dataset.name);
-    }
-  });
-}
-
-function goToEntityDetail(kind, name){
-  selected[kind] = name;
-  switchView(kind);
-  renderHomeRankings();
-  if(kind==='company' || kind==='category') drawEntityTable(kind);
-  if(kind==='employment') renderEmploymentView();
-  drawDetail(kind);
-}
-
-/* ---------- 홈 랭킹 ---------- */
-function renderHomeRankings(){
-  const catEntries = sortEntries(entityState.category, 'count');
-  const compEntries = sortEntries(entityState.company, 'count');
-  renderRankRows(document.querySelector('#homeCategoryTable tbody'), catEntries, 'category', 10, true);
-  renderRankRows(document.querySelector('#homeCompanyTable tbody'), compEntries, 'company', 10, true);
-}
-
-function fmtPct(delta, prev){
-  if(prev>0) return ` (${delta>0?'+':''}${(delta/prev*100).toFixed(0)}%)`;
-  if(delta>0) return ' (신규)';
-  return '';
-}
-
-function computeMonthlyStats(snapIndex){
-  if(snapshots.length<2) return null;
-  const idx = snapIndex != null ? snapIndex : snapshots.length - 1;
-  if(idx < 1) return null;
-
-  const latest = snapshots[idx];
-  const prev = snapshots[idx - 1];
-
-  const totalDelta = latest.jobs.length - prev.jobs.length;
-
-  const groupCountsOf = (jobs)=>{
-    const c = {}; GROUP_ORDER.forEach(g=>c[g]=0);
-    jobs.forEach(j=>{
-      const groupsHit = new Set(jobCategories(j).map(x=>classifyBroadGroup(x)[0]));
-      groupsHit.forEach(g=>{ if(c[g]!=null) c[g]++; });
-    });
-    return c;
-  };
-  const curG = groupCountsOf(latest.jobs), prevG = groupCountsOf(prev.jobs);
-  const groupDeltas = GROUP_ORDER.map(g=>({g, delta:curG[g]-prevG[g], cur:curG[g], prev:prevG[g]}))
-    .filter(d=> d.cur>0 || d.prev>0);
-
-  const empCountsOf = (jobs)=>{
-    const c = {};
-    jobs.forEach(j=>{ const b = employmentBucket(j); c[b] = (c[b]||0)+1; });
-    return c;
-  };
-  const curE = empCountsOf(latest.jobs);
-  const prevE = empCountsOf(prev.jobs);
-  const empBreakdown = Object.keys(curE).map(name=>({
-    name, cur: curE[name], prev: prevE[name]||0,
-    pct: Number((curE[name]/latest.jobs.length*100).toFixed(1))
-  })).sort((a,b)=>b.cur-a.cur);
-
-  const compSorted = [...entityState.company].filter(e=>e.series[idx]!=null).sort((a,b)=>{
-    const dA = (a.series[idx] || 0) - (a.series[idx-1] || 0);
-    const dB = (b.series[idx] || 0) - (b.series[idx-1] || 0);
-    return dB - dA;
-  });
-
-  const topIncComp = compSorted[0];
-  const topDecComp = compSorted[compSorted.length-1];
-
-  return {
-    date: latest.date, prevDate: prev.date,
-    latestTotal: latest.jobs.length, prevTotal: prev.jobs.length, totalDelta,
-    groupDeltas, empBreakdown,
-    compGain: topIncComp ? { name: topIncComp.name, delta: topIncComp.series[idx] - topIncComp.series[idx-1], latest: topIncComp.series[idx] } : null,
-    compDrop: topDecComp ? { name: topDecComp.name, delta: topDecComp.series[idx] - topDecComp.series[idx-1], latest: topDecComp.series[idx] } : null,
-  };
-}
-
-function renderInsightSummary(){
-  const panel = document.getElementById('insightPanel');
-  const placeholder = document.getElementById('insightPlaceholder');
-
-  const stats = computeMonthlyStats();
-  if(!stats){
-    panel.style.display = 'none';
-    placeholder.style.display = 'block';
-    return;
-  }
-  placeholder.style.display = 'none';
-  panel.style.display = 'block';
-
-  const bullets = [];
-
-  if(stats.totalDelta > 0){
-    bullets.push(`전체 채용 공고가 지난달보다 <span class="up-text">${stats.totalDelta}건 늘어난</span> ${stats.latestTotal}건이에요.`);
-  }else if(stats.totalDelta < 0){
-    bullets.push(`전체 채용 공고가 지난달보다 <span class="down-text">${Math.abs(stats.totalDelta)}건 줄어든</span> ${stats.latestTotal}건이에요.`);
-  }else{
-    bullets.push(`전체 채용 공고 수는 지난달과 동일한 ${stats.latestTotal}건이에요.`);
-  }
-
-  const topGain = [...stats.groupDeltas].sort((a,b)=>b.delta-a.delta)[0];
-  const topDrop = [...stats.groupDeltas].sort((a,b)=>a.delta-b.delta)[0];
-
-  if(topGain && topGain.delta>0){
-    bullets.push(`${GROUP_EMOJI_MAP[topGain.g]} <b>${topGain.g}</b> 직군 채용이 가장 많이 늘었어요 — <span class="up-text">+${topGain.delta}건${fmtPct(topGain.delta, topGain.prev)}</span>, 현재 ${topGain.cur}건 채용 중.`);
-  }
-  if(topDrop && topDrop.delta<0 && topDrop.g!==(topGain && topGain.g)){
-    bullets.push(`${GROUP_EMOJI_MAP[topDrop.g]} <b>${topDrop.g}</b> 직군 채용은 가장 많이 줄었어요 — <span class="down-text">${topDrop.delta}건${fmtPct(topDrop.delta, topDrop.prev)}</span>, 현재 ${topDrop.cur}건.`);
-  }
-
-  if(stats.empBreakdown.length){
-    const top = stats.empBreakdown[0];
-    const empDelta = top.cur - top.prev;
-    const deltaText = empDelta!==0 ? ` (지난달 대비 ${empDelta>0?'+':''}${empDelta}건)` : '';
-    bullets.push(`고용형태는 <b>${top.name}</b> 비중이 ${top.pct}%로 가장 높아요 (${top.cur}건)${deltaText}.`);
-  }
-
-  if(stats.compGain && stats.compGain.delta>0){
-    bullets.push(`<b>${escapeHtml(stats.compGain.name)}</b>이(가) 채용 공고를 가장 많이 늘렸어요 — <span class="up-text">+${stats.compGain.delta}건</span>, 현재 ${stats.compGain.latest}건.`);
-  }
-  if(stats.compDrop && stats.compDrop.delta<0 && stats.compDrop.name!==(stats.compGain && stats.compGain.name)){
-    bullets.push(`<b>${escapeHtml(stats.compDrop.name)}</b>은(는) 채용 공고를 가장 많이 줄였어요 — <span class="down-text">${stats.compDrop.delta}건</span>, 현재 ${stats.compDrop.latest}건.`);
-  }
-
-  document.getElementById('insightList').innerHTML = bullets.map(b=>`<li>${b}</li>`).join('');
-}
-
-function parseAiReportToHtml(markdownText) {
-  const sections = markdownText.split(/(?=\n###? )/g);
-  let html = '';
-
-  sections.forEach(sec => {
-    const trimmed = sec.trim();
-    if (!trimmed) return;
-
-    let lines = trimmed.split('\n');
-    let title = '';
-    let bodyLines = [];
-
-    if (lines[0].startsWith('#')) {
-      title = lines[0].replace(/^#+\s*/, '');
-      bodyLines = lines.slice(1);
-    } else {
-      bodyLines = lines;
-    }
-
-    let bodyHtml = bodyLines.join('\n')
-      .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-      .replace(/^\s*[\-\*]\s+(.*)$/gim, '<li>$1</li>')
-      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-      .replace(/\n\n/g, '<br>');
-
-    if (title) {
-      html += `
-        <div class="ai-section-card">
-          <div class="ai-section-title">${escapeHtml(title)}</div>
-          <div class="ai-section-body">${bodyHtml}</div>
-        </div>
-      `;
-    } else {
-      html += `<div class="ai-section-body" style="padding: 6px 0;">${bodyHtml}</div>`;
-    }
-  });
-
-  return html;
-}
-
-/* ---------- 월별 리포트 탭 & 팝업 모달 ---------- */
-function renderReportView(){
-  const container = document.getElementById('reportListContainer');
-  if(snapshots.length < 2){
-    container.innerHTML = '<div class="placeholder-hint">스냅샷이 2개 이상 쌓이면(다음 달부터) 월별 리포트 보관함이 자동으로 활성화돼요.</div>';
-    return;
-  }
-
-  let itemsHtml = '<div class="report-card-list">';
-  for(let i = snapshots.length - 1; i >= 1; i--){
-    const cur = snapshots[i];
-    const prev = snapshots[i-1];
-    const dateParts = cur.date.split('-');
-    const yearMonth = `${dateParts[0]}년 ${parseInt(dateParts[1])}월`;
-
-    itemsHtml += `
-      <div class="report-item-card" onclick="openReportModal(${i})">
-        <div>
-          <div class="report-item-title">📄 ${yearMonth} 게임 채용 트렌드 리포트</div>
-          <div class="report-item-sub">수집 기준일: ${cur.date} (전월: ${prev.date}) · 총 ${cur.jobs.length}건 공고</div>
-        </div>
-        <div class="report-badge">리포트 열기 ↗</div>
-      </div>
-    `;
-  }
-  itemsHtml += '</div>';
-  container.innerHTML = itemsHtml;
-}
-
-async function openReportModal(snapIndex){
-  const modal = document.getElementById('reportModal');
-  const titleEl = document.getElementById('modalTitle');
-  const bodyEl = document.getElementById('modalBody');
-
-  const cur = snapshots[snapIndex];
-  const prev = snapshots[snapIndex-1];
-  const stats = computeMonthlyStats(snapIndex);
-
-  const reportTitle = `${cur.date} 월간 게임 채용 분석 리포트 (${prev.date} 대비)`;
-  titleEl.textContent = reportTitle;
-  bodyEl.innerHTML = '<div class="placeholder-hint">🔍 리포트 데이터 및 AI 딥 분석을 불러오는 중입니다...</div>';
-  modal.classList.add('active');
-
-  const promptCriteriaText = `[데이터 수집 및 분석 기준]
-1. 수집 대상: 게임잡 전체 공개 채용 공고 (모바일/PC 파싱)
-2. 뉴스/커뮤니티 크롤링: 게임잡 공식 뉴스(gamejob.co.kr/Community/news) & DC 게임메카(gall.dcinside.com/gamemeca) 실시간 수집
-3. 분석 모델: Gemini 2.5 Flash + Google Search Grounding
-4. 분석 범위: 거시 시장 동향 + 주요 기업 신작 프로젝트 딥다이브 + 기술 스택 전망`;
-
-  const promptAccordionHtml = `
-    <details class="ai-prompt-accordion">
-      <summary>📋 데이터 분석 기준 정보 보기</summary>
-      <div class="ai-prompt-content">${escapeHtml(promptCriteriaText)}</div>
-    </details>
-  `;
-
-  let reportTextForDownload = '';
-
-  // 1. 저장된 마크다운 리포트 파일 요청
-  try {
-    const reportRes = await fetch(`data/reports/${cur.date}_ai_analysis.md`, {cache:'no-store'});
-    if(reportRes.ok){
-      const mdText = await reportRes.text();
-      reportTextForDownload = `# ${reportTitle}\n\n` + mdText;
-      bodyEl.innerHTML = parseAiReportToHtml(mdText) + promptAccordionHtml;
-
-      currentReportData = { date: cur.date, title: reportTitle, text: reportTextForDownload };
-      return;
-    }
-  } catch(e) {}
-
-  // 2. 저장된 파일이 없는 경우 기본 수치 리포트
-  if(stats){
-    reportTextForDownload = `# ${reportTitle}\n\n` +
-      `- 전체 공고: ${stats.latestTotal}건 (전월 대비 ${stats.totalDelta>=0?'+':''}${stats.totalDelta}건)\n` +
-      (stats.compGain ? `- 공고 최다 증가 기업: ${stats.compGain.name} (+${stats.compGain.delta}건)\n` : '') +
-      (stats.compDrop ? `- 공고 최다 감소 기업: ${stats.compDrop.name} (${stats.compDrop.delta}건)\n` : '');
-
-    let fallbackHtml = `
-      <div class="ai-section-card">
-        <div class="ai-section-title">📊 채용 공고 요약</div>
-        <div class="ai-section-body">
-          <ul>
-            <li>전체 채용 공고: <b>${stats.latestTotal}건</b> (전월 대비 <b>${stats.totalDelta>=0?'+':''}${stats.totalDelta}건</b>)</li>
-            ${stats.compGain ? `<li>가장 공고가 많이 늘어난 기업: <b>${escapeHtml(stats.compGain.name)}</b> (+${stats.compGain.delta}건)</li>` : ''}
-            ${stats.compDrop ? `<li>가장 공고가 많이 줄어든 기업: <b>${escapeHtml(stats.compDrop.name)}</b> (${stats.compDrop.delta}건)</li>` : ''}
-          </ul>
-        </div>
-      </div>
-      <div class="ai-section-card">
-        <div class="ai-section-title">💡 주요 직군 증감 현황</div>
-        <div class="ai-section-body">
-          <ul>
-            ${stats.groupDeltas.map(d=>`<li><b>${d.g}</b>: ${d.cur}건 (전월 대비 ${d.delta>=0?'+':''}${d.delta}건)</li>`).join('')}
-          </ul>
-        </div>
-      </div>
-      ${promptAccordionHtml}
-    `;
-    bodyEl.innerHTML = fallbackHtml;
-    currentReportData = { date: cur.date, title: reportTitle, text: reportTextForDownload };
-  } else {
-    bodyEl.innerHTML = '<div class="placeholder-hint">리포트 데이터를 불러올 수 없습니다.</div>';
-  }
-}
-
-function closeReportModal(){
-  document.getElementById('reportModal').classList.remove('active');
-}
-
-/* 리포트 다운로드 (.md 파일 저장) */
-function downloadReport(){
-  if(!currentReportData.text){
-    alert('다운로드할 리포트 내용이 없습니다.');
-    return;
-  }
-  const blob = new Blob([currentReportData.text], { type: 'text/markdown;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${currentReportData.date}_게임채용_리포트.md`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-/* 리포트 공유하기 */
-function shareReport(){
-  const shareTitle = currentReportData.title || '게임잡 채용 트래커 월간 리포트';
-  const shareUrl = window.location.href;
-
-  if (navigator.share) {
-    navigator.share({
-      title: shareTitle,
-      text: `${shareTitle}\n\n게임 업계 최신 채용 데이터와 뉴스 분석 리포트를 확인해 보세요!`,
-      url: shareUrl
-    }).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      alert('대시보드 링크(URL)가 클립보드에 복사되었습니다!');
-    }).catch(() => {
-      alert('주소 복사에 실패했습니다.');
-    });
-  }
-}
-
-document.getElementById('reportModal').addEventListener('click', (e)=>{
-  if(e.target === document.getElementById('reportModal')){
-    closeReportModal();
-  }
-});
-
-/* ---------- 기업별/공고별 탭 ---------- */
-function setupEntityView(kind){
-  const searchEl = document.getElementById(kind+'Search');
-  searchEl.oninput = ()=> drawEntityTable(kind);
-
-  document.querySelectorAll(`.sort-chips[data-kind="${kind}"] .chip`).forEach(chip=>{
-    chip.onclick = ()=>{
-      document.querySelectorAll(`.sort-chips[data-kind="${kind}"] .chip`).forEach(c=>c.classList.remove('active'));
-      chip.classList.add('active');
-      sortStateByKind[kind] = chip.dataset.sort;
-      drawEntityTable(kind);
-    };
-  });
-
-  drawEntityTable(kind);
-}
-
-function drawEntityTable(kind){
-  const q = document.getElementById(kind+'Search').value.trim().toLowerCase();
-  let entries = entityState[kind].filter(e=> e.name.toLowerCase().includes(q));
-  entries = sortEntries(entries, sortStateByKind[kind]);
-  const tbody = document.getElementById(kind+'RankBody');
-  renderRankRows(tbody, entries, kind, null);
-  document.getElementById(kind+'RowCount').textContent = `${entries.length}개`;
-}
-
-/* ---------- 고용형태 탭 ---------- */
-const EMPLOYMENT_COLORS = {'정규직':'#3182f6','계약직':'#f59e0b','인턴직':'#10b981','파견직':'#8b5cf6','기타':'#64748b'};
-
-function renderEmploymentView(){
-  const entries = sortEntries(entityState.employment, 'count');
-  renderRankRows(document.getElementById('employmentRankBody'), entries, 'employment', null);
-  renderEmploymentDonut(entries);
-}
-
-function renderEmploymentDonut(entries){
-  const total = entries.reduce((sum,e)=> sum+e.latest, 0);
-  if(!total) return;
-
-  destroyChart('employmentDonut');
-  charts.employmentDonut = new Chart(document.getElementById('employmentDonutCanvas'), {
-    type:'doughnut',
-    data:{
-      labels: entries.map(e=>e.name),
-      datasets:[{
-        data: entries.map(e=>e.latest),
-        backgroundColor: entries.map(e=> EMPLOYMENT_COLORS[e.name] || '#c7ccd3'),
-        borderWidth:2, borderColor:'#ffffff'
-      }]
-    },
-    options:{ cutout:'68%', plugins:{legend:{display:false}} }
-  });
-
-  document.getElementById('employmentDonutLegend').innerHTML = entries.map(e=>{
-    const pct = (e.latest/total*100).toFixed(0);
-    const color = EMPLOYMENT_COLORS[e.name] || '#c7ccd3';
-    return `
-      <div class="donut-legend-row">
-        <span><span class="donut-dot" style="background:${color};"></span>${escapeHtml(e.name)}</span>
-        <span>${e.latest}건 · ${pct}%</span>
-      </div>
-    `;
-  }).join('');
-}
-
-/* ---------- 상세 패널 ---------- */
-function groupCounts(jobs, getKeys){
-  const counts = {};
-  jobs.forEach(j=> getKeys(j).forEach(k=>{ if(k) counts[k]=(counts[k]||0)+1; }));
-  return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-}
-
-function podiumHtml(sortedEntries){
-  const top3 = sortedEntries.slice(0,3);
-  if(!top3.length) return '<div class="placeholder-hint">데이터 없음</div>';
-  const medal = ['🥇','🥈','🥉'];
-  const displayOrder = [1,0,2].filter(i=> top3[i]);
-  return `
-    <div class="podium">
-      ${displayOrder.map(i=>{
-        const [name, count] = top3[i];
-        return `
-          <div class="podium-item ${i===0?'first':''}">
-            <div class="podium-medal">${medal[i]}</div>
-            <div class="podium-name">${escapeHtml(name)}</div>
-            <div class="podium-count">${count}건</div>
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
-}
-
-const GROUP_ORDER = ['개발','아트','기획','QA','사업','지원부서'];
-const GROUP_COLORS = {
-  '개발':'#3182f6', '아트':'#f59e0b', '기획':'#10b981',
-  'QA':'#8b5cf6', '사업':'#f04452', '지원부서':'#64748b'
-};
-const GROUP_EMOJI_MAP = {'개발':'💻','아트':'🎨','기획':'📋','QA':'🧪','사업':'📈','지원부서':'🗂️'};
-
-function buildCompanyGroupSeries(companyName){
-  const result = {};
-  GROUP_ORDER.forEach(g=> result[g] = []);
-  snapshots.forEach(snap=>{
-    const counts = {}; GROUP_ORDER.forEach(g=> counts[g]=0);
-    snap.jobs.forEach(j=>{
-      if(j.company_name !== companyName) return;
-      const groupsHit = new Set(jobCategories(j).map(c=> classifyBroadGroup(c)[0]));
-      groupsHit.forEach(g=>{ if(counts[g]!=null) counts[g]++; });
-    });
-    GROUP_ORDER.forEach(g=> result[g].push(counts[g]));
-  });
-  return result;
-}
-
-function selectEntity(kind, name){
-  selected[kind] = (selected[kind]===name) ? null : name;
-  renderHomeRankings();
-  if(kind==='company') drawEntityTable('company');
-  if(kind==='category') drawEntityTable('category');
-  if(kind==='employment') renderEmploymentView();
-  drawDetail(kind);
-}
-
-function drawDetail(kind){
-  const panel = document.getElementById(kind+'Detail');
-  const name = selected[kind];
-  const chartKey = kind+'Detail';
-
-  if(kind==='company'){
-    const listSection = document.getElementById('companyListSection');
-    if(!name){
-      panel.classList.remove('show');
-      listSection.style.display = 'block';
-      destroyChart(chartKey); destroyChart(chartKey+'Group');
-      return;
-    }
-    listSection.style.display = 'none';
-    panel.classList.add('show');
-    const entry = entityState.company.find(e=>e.name===name);
-    const latestSnap = snapshots[snapshots.length-1];
-    const jobsHere = latestSnap.jobs.filter(j=> KEY_FNS.company(j).includes(name));
-    drawCompanyDetail(panel, name, entry, jobsHere, chartKey);
-    return;
-  }
-
-  if(!name){ panel.classList.remove('show'); destroyChart(chartKey); destroyChart(chartKey+'Group'); return; }
-  panel.classList.add('show');
-
-  const entry = entityState[kind].find(e=>e.name===name);
-  const latestSnap = snapshots[snapshots.length-1];
-  const jobsHere = latestSnap.jobs.filter(j=> KEY_FNS[kind](j).includes(name));
-
-  let breakdownHtml = '';
-  if(kind==='category'){
-    const byComp = groupCounts(jobsHere, j=>[j.company_name]);
-    breakdownHtml = `
-      <div class="stock-section">
-        <h3>이 직무를 채용 중인 회사 TOP 3</h3>
-        ${podiumHtml(byComp)}
-      </div>`;
-  } else if(kind==='employment'){
-    const byComp = groupCounts(jobsHere, j=>[j.company_name]).slice(0,8);
-    const byCat = groupCounts(jobsHere, jobCategories).slice(0,8);
-    breakdownHtml = `
-      <div class="breakdown-lists">
-        <div class="bd-block"><h4>회사별</h4>
-          ${byComp.map(([n,c])=>`<div class="bd-row"><span>${escapeHtml(n)}</span><span>${c}건</span></div>`).join('') || '<div class="placeholder-hint">데이터 없음</div>'}
-        </div>
-        <div class="bd-block"><h4>직무별</h4>
-          ${byCat.map(([n,c])=>`<div class="bd-row"><span>${escapeHtml(categoryLabel(n))}</span><span>${c}건</span></div>`).join('') || '<div class="placeholder-hint">데이터 없음</div>'}
-        </div>
-      </div>`;
-  }
-
-  const titleText = kind==='category' ? categoryLabel(name) : name;
-
-  panel.innerHTML = `
-    <div class="dp-head">
-      <div class="dp-title" style="display:flex;align-items:center;">${kind==='company' ? logoImgHtml(entry,28) : ''}<span>${escapeHtml(titleText)}</span></div>
-      <button class="dp-close" onclick="selectEntity('${kind}', '${name.replace(/'/g, "\\'")}')">닫기 ✕</button>
-    </div>
-    <div class="dp-count">${entry.latest}건</div>
-    <div class="dp-sub">${entry.delta!=null ? `전월대비 ${entry.delta>0?'+':''}${entry.delta}건${entry.pct!=null?` (${entry.pct>0?'+':''}${entry.pct.toFixed(0)}%)`:''}` : '이전 스냅샷 없음'}</div>
-    ${snapshots.length>1 ? `<canvas id="${chartKey}Canvas" height="60"></canvas>` : ''}
-    ${breakdownHtml}
-    <div class="detail-jobs">
-      <h4 style="font-size:12px;color:var(--muted);font-weight:700;margin:14px 0 8px;">현재 등록된 공고 (${jobsHere.length}건)</h4>
-      ${jobsHere.slice(0,20).map(j=>`
-        <div class="dj-row">
-          <div class="dj-title">${escapeHtml(j.title)} · ${escapeHtml(j.company_name)}</div>
-          <div class="dj-meta">${escapeHtml(j.deadline_raw)}</div>
-        </div>
-      `).join('') || '<div class="placeholder-hint">공고가 없어요</div>'}
-      ${jobsHere.length>20 ? `<div class="placeholder-hint">외 ${jobsHere.length-20}건 더 있음</div>` : ''}
-    </div>
-  `;
-
-  if(snapshots.length>1){
-    destroyChart(chartKey);
-    charts[chartKey] = new Chart(document.getElementById(chartKey+'Canvas'), {
-      type:'line',
-      data:{ labels: snapshots.map(s=>s.date), datasets:[{
-        data: entry.series, borderColor:'#3182f6', backgroundColor:'rgba(49,130,246,0.08)',
-        fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:'#3182f6'
-      }]},
-      options:{ plugins:{legend:{display:false}},
-        scales:{ x:{ticks:{color:'#8b95a1'},grid:{display:false}}, y:{ticks:{color:'#8b95a1'},grid:{color:'#eaebee'},beginAtZero:true} } }
-    });
-  }
-}
-
-function companyKeyInfoGrid(entry){
-  const items = [
-    ['공고 수', entry.latest + '건'],
-    ['전월대비', entry.delta!=null ? `${entry.delta>0?'+':''}${entry.delta}건${entry.pct!=null?` (${entry.pct>0?'+':''}${entry.pct.toFixed(0)}%)`:''}` : '—'],
-    ['대표자명', entry.ceo],
-    ['설립연도', entry.foundedYear],
-  ].filter(([, v]) => v);
-
-  if(entry.flagshipGames){
-    items.push(['대표게임', entry.flagshipGames]);
-  }
-
-  if(!items.length) return '';
-
-  return `
-    <div class="info-grid">
-      ${items.map(([label, val])=>`
-        <div class="info-item${label==='대표게임' ? ' info-item-wide' : ''}">
-          <div class="info-label">${escapeHtml(label)}</div>
-          <div class="info-value">${escapeHtml(val)}</div>
-        </div>
-      `).join('')}
-    </div>
-  `;
-}
-
-function companyDonutSectionHtml(jobsHere, chartKey){
-  if(!jobsHere.length){
-    return '<div class="placeholder-hint">현재 등록된 공고가 없어요</div>';
-  }
-  return `
-    <div class="donut-section">
-      <div class="donut-canvas-wrap"><canvas id="${chartKey}DonutCanvas"></canvas></div>
-      <div class="donut-legend" id="${chartKey}DonutLegend"></div>
-    </div>
-  `;
-}
-
-function drawCompanyDetail(panel, name, entry, jobsHere, chartKey){
-  const byCat = groupCounts(jobsHere, jobCategories).slice(0,10);
-  const hasHistory = snapshots.length>1;
-
-  panel.innerHTML = `
-    <div class="dp-head">
-      <button class="dp-back" onclick="selectEntity('company', '${name.replace(/'/g, "\\'")}')">← 기업 목록으로</button>
-      ${entry.homepage ? `<a class="dp-homepage-btn" href="${escapeHtml(entry.homepage)}" target="_blank" rel="noopener">홈페이지 ↗</a>` : ''}
-    </div>
-    <div class="dp-head" style="margin-top:10px;">
-      <div class="dp-title" style="display:flex;align-items:center;">${logoImgHtml(entry,32)}<span>${escapeHtml(name)}</span></div>
-    </div>
-
-    ${companyKeyInfoGrid(entry)}
-
-    <div class="stock-section">
-      <h3>직무 구성</h3>
-      ${companyDonutSectionHtml(jobsHere, chartKey)}
-    </div>
-
-    <div class="stock-section">
-      <h3>세부 직종별 공고</h3>
-      <div class="bd-block">
-        ${byCat.map(([n,c])=>`<div class="bd-row"><span>${escapeHtml(categoryLabel(n))}</span><span>${c}건</span></div>`).join('') || '<div class="placeholder-hint">데이터 없음</div>'}
-      </div>
-    </div>
-
-    <div class="stock-section">
-      <h3>채용 추이</h3>
-      ${hasHistory ? `
-        <div style="margin-bottom:20px;">
-          <div class="chart-subtitle">전체 공고 수</div>
-          <canvas id="${chartKey}Canvas" height="70"></canvas>
-        </div>
-        <div>
-          <div class="chart-subtitle">직무 그룹별</div>
-          <canvas id="${chartKey}GroupCanvas" height="90"></canvas>
-        </div>
-      ` : '<div class="placeholder-hint">여러 달 데이터가 있어야 추이를 볼 수 있어요</div>'}
-    </div>
-
-    <div class="stock-section">
-      <h3>현재 등록된 공고 (${jobsHere.length}건)</h3>
-      <div class="detail-jobs">
-        ${jobsHere.slice(0,30).map(j=>`
-          <div class="dj-row">
-            <div class="dj-title">${escapeHtml(j.title)}</div>
-            <div class="dj-meta">${escapeHtml(j.deadline_raw)}</div>
-          </div>
-        `).join('') || '<div class="placeholder-hint">공고가 없어요</div>'}
-        ${jobsHere.length>30 ? `<div class="placeholder-hint">외 ${jobsHere.length-30}건 더 있음</div>` : ''}
-      </div>
-    </div>
-  `;
-
-  destroyChart(chartKey);
-  destroyChart(chartKey+'Group');
-  destroyChart(chartKey+'Donut');
-
-  if(jobsHere.length){
-    const donutCounts = {}; GROUP_ORDER.forEach(g=> donutCounts[g]=0);
-    jobsHere.forEach(j=>{
-      const cats = jobCategories(j);
-      const primary = cats.length ? cats[0] : '기타/미분류';
-      const [group] = classifyBroadGroup(primary);
-      donutCounts[group] = (donutCounts[group]||0)+1;
-    });
-    const activeGroups = GROUP_ORDER.filter(g=> donutCounts[g]>0);
-    const total = jobsHere.length;
-
-    charts[chartKey+'Donut'] = new Chart(document.getElementById(chartKey+'DonutCanvas'), {
-      type:'doughnut',
-      data:{
-        labels: activeGroups.map(g=>`${GROUP_EMOJI_MAP[g]} ${g}`),
-        datasets:[{
-          data: activeGroups.map(g=>donutCounts[g]),
-          backgroundColor: activeGroups.map(g=>GROUP_COLORS[g]),
-          borderWidth:2, borderColor:'#ffffff'
-        }]
-      },
-      options:{ cutout:'68%', plugins:{legend:{display:false}} }
-    });
-
-    document.getElementById(chartKey+'DonutLegend').innerHTML = activeGroups.map(g=>{
-      const pct = (donutCounts[g]/total*100).toFixed(0);
-      return `
-        <div class="donut-legend-row">
-          <span><span class="donut-dot" style="background:${GROUP_COLORS[g]};"></span>${GROUP_EMOJI_MAP[g]} ${g}</span>
-          <span>${donutCounts[g]}건 · ${pct}%</span>
-        </div>
-      `;
-    }).join('');
-  }
-
-  if(hasHistory){
-    charts[chartKey] = new Chart(document.getElementById(chartKey+'Canvas'), {
-      type:'line',
-      data:{ labels: snapshots.map(s=>s.date), datasets:[{
-        data: entry.series, borderColor:'#3182f6', backgroundColor:'rgba(49,130,246,0.08)',
-        fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:'#3182f6'
-      }]},
-      options:{ plugins:{legend:{display:false}},
-        scales:{ x:{ticks:{color:'#8b95a1'},grid:{display:false}}, y:{ticks:{color:'#8b95a1'},grid:{color:'#eaebee'},beginAtZero:true} } }
-    });
-
-    const groupSeries = buildCompanyGroupSeries(name);
-    charts[chartKey+'Group'] = new Chart(document.getElementById(chartKey+'GroupCanvas'), {
-      type:'line',
-      data:{
-        labels: snapshots.map(s=>s.date),
-        datasets: GROUP_ORDER.map(g=>({
-          label: `${GROUP_EMOJI_MAP[g]} ${g}`,
-          data: groupSeries[g],
-          borderColor: GROUP_COLORS[g],
-          backgroundColor: GROUP_COLORS[g],
-          tension:0.3, pointRadius:2, borderWidth:2
-        }))
-      },
-      options:{
-        plugins:{legend:{position:'bottom', labels:{color:'#191f28', boxWidth:10, font:{size:11}}}},
-        scales:{
-          x:{ticks:{color:'#8b95a1'},grid:{display:false}},
-          y:{ticks:{color:'#8b95a1', stepSize:1},grid:{color:'#eaebee'},beginAtZero:true}
+FIELDNAMES = [
+    "gi_no", "title", "company_name", "company_id", "career",
+    "education", "employment_type", "deadline_raw", "job_function", "job_categories",
+    "company_logo_url", "company_ceo", "company_founded_year",
+    "company_flagship_games", "company_homepage"
+]
+
+
+# ----------------------------------------------------------------------------
+# 네트워크 및 유틸리티 함수
+# ----------------------------------------------------------------------------
+
+def make_session() -> requests.Session:
+    s = requests.Session()
+    s.headers.update(HEADERS)
+    try:
+        s.get(MAIN_LIST_URL, timeout=15)
+    except Exception:
+        pass
+    return s
+
+
+def request_headers_for(url_tmpl: str) -> dict:
+    if "_GI_Job_List" in url_tmpl:
+        return {
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": MAIN_LIST_URL,
         }
-      }
-    });
-  }
-}
-</script>
-</body>
-</html>
+    return {}
+
+
+def classify_job_function(title: str) -> str:
+    for func, keywords in JOB_FUNCTION_KEYWORDS.items():
+        for kw in keywords:
+            if kw in title:
+                return func
+    return "기타/미분류"
+
+
+# ----------------------------------------------------------------------------
+# 뉴스 및 커뮤니티 크롤러 (구글 뉴스 RSS + 게임잡 뉴스 + 디시 게임메카)
+# ----------------------------------------------------------------------------
+
+def fetch_google_news_rss(query: str, limit=6) -> list:
+    """구글 뉴스 RSS 실시간 검색 크롤링"""
+    encoded_q = urllib.parse.quote(query)
+    url = f"https://news.google.com/rss/search?q={encoded_q}&hl=ko&gl=KR&ceid=KR:ko"
+    headlines = []
+    try:
+        r = requests.get(url, timeout=10)
+        if r.status_code == 200:
+            root = ET.fromstring(r.content)
+            for item in root.findall(".//item"):
+                title = item.find("title")
+                if title is not None and title.text:
+                    clean_title = title.text.split(" - ")[0].strip()
+                    if clean_title and clean_title not in headlines:
+                        headlines.append(clean_title)
+                    if len(headlines) >= limit:
+                        break
+        print(f"[news] 구글 뉴스 '{query}' {len(headlines)}건 크롤링 완료")
+    except Exception as e:
+        print(f"[news] 구글 뉴스 RSS 수집 실패 ({query}): {e}")
+    return headlines
+
+
+def fetch_gamejob_news(session: requests.Session, limit=8) -> list:
+    """게임잡 뉴스 게시판 크롤링"""
+    url = "https://www.gamejob.co.kr/Community/news?Comm_Stat=0"
+    headlines = []
+    try:
+        r = session.get(url, timeout=15)
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            for a in soup.find_all("a", href=True):
+                if "/Community/news/detail" in a["href"] or "news" in a["href"]:
+                    title = a.get_text(strip=True)
+                    if title and len(title) > 6 and title not in headlines and "뉴스" not in title:
+                        headlines.append(title)
+                    if len(headlines) >= limit:
+                        break
+        print(f"[news] 게임잡 공식 뉴스 {len(headlines)}건 크롤링 완료")
+    except Exception as e:
+        print(f"[news] 게임잡 뉴스 크롤링 실패: {e}")
+    return headlines
+
+
+def fetch_dc_gamemeca_news(session: requests.Session, limit=8) -> list:
+    """게임메카 갤러리 실시간 크롤링"""
+    url = "https://gall.dcinside.com/board/lists/?id=gamemeca"
+    headlines = []
+    try:
+        dc_headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36"
+        }
+        r = session.get(url, headers=dc_headers, timeout=15)
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            for tr in soup.find_all("tr", class_="ub-content"):
+                tit_td = tr.find("td", class_="gall_tit")
+                if tit_td:
+                    a = tit_td.find("a")
+                    if a:
+                        title = a.get_text(strip=True)
+                        if title and len(title) > 5 and title not in headlines:
+                            headlines.append(title)
+                        if len(headlines) >= limit:
+                            break
+        print(f"[news] DC 게임메카 이슈 {len(headlines)}건 크롤링 완료")
+    except Exception as e:
+        print(f"[news] DC 게임메카 크롤링 실패: {e}")
+    return headlines
+
+
+# ----------------------------------------------------------------------------
+# 상세 정보 캐싱 (직종 및 기업 정보)
+# ----------------------------------------------------------------------------
+
+MOBILE_DETAIL_URL = "https://m.gamejob.co.kr/Recruit?GI_No={gi_no}"
+CATEGORY_FIELD_RE = re.compile(r"모집분야\s*(.+?)\s*(?:툴팁기능|접수안내|경력)", re.DOTALL)
+
+
+def load_category_cache() -> dict:
+    cache = {}
+    if CATEGORY_CACHE_PATH.exists():
+        with CATEGORY_CACHE_PATH.open(encoding="utf-8-sig") as f:
+            for row in csv.DictReader(f):
+                cache[row["gi_no"]] = row["categories"]
+    return cache
+
+
+def save_category_cache(cache: dict):
+    with CATEGORY_CACHE_PATH.open("w", newline="", encoding="utf-8-sig") as f:
+        w = csv.writer(f)
+        w.writerow(["gi_no", "categories"])
+        for gi_no, categories in cache.items():
+            w.writerow([gi_no, categories])
+
+
+COMPANY_INFO_FIELDS = ["logo_url", "ceo_name", "founded_year", "flagship_games", "homepage_url"]
+
+
+def load_company_info_cache() -> dict:
+    cache = {}
+    if COMPANY_INFO_CACHE_PATH.exists():
+        with COMPANY_INFO_CACHE_PATH.open(encoding="utf-8-sig") as f:
+            for row in csv.DictReader(f):
+                cache[row["company_id"]] = {k: row.get(k, "") for k in COMPANY_INFO_FIELDS}
+    return cache
+
+
+def save_company_info_cache(cache: dict):
+    with COMPANY_INFO_CACHE_PATH.open("w", newline="", encoding="utf-8-sig") as f:
+        w = csv.DictWriter(f, fieldnames=["company_id"] + COMPANY_INFO_FIELDS)
+        w.writeheader()
+        for company_id, info in cache.items():
+            row = {"company_id": company_id}
+            row.update({k: info.get(k, "") for k in COMPANY_INFO_FIELDS})
+            w.writerow(row)
+
+
+COMPANY_DETAIL_URL = "https://www.gamejob.co.kr/Company/Detail?M={company_id}"
+
+LOGO_URL_RE = re.compile(
+    r'(?:https?:)?//file\.gamejob\.co\.kr/net/Corp/CoImage/LogoView\?FN=[^"\'\s<>\)]+',
+    re.IGNORECASE,
+)
+CEO_NAME_RE = re.compile(r'대표자명\s*\n\s*([^\n]+)')
+FOUNDED_YEAR_RE = re.compile(r'설립(?:년도|연도)\s*\n\s*([^\n]+)')
+FLAGSHIP_GAMES_RE = re.compile(r'대표게임\s*\n\s*([^\n]+)')
+HOMEPAGE_LABEL_RE = re.compile(r'홈페이지\s*\n\s*(https?://\S+)')
+LOCATION_LINE_RE = re.compile(r'회사위치\s*\n\s*([^\n]+)')
+URL_IN_TEXT_RE = re.compile(r'https?://[^\s\)>"\']+')
+
+
+def _clean_field(val):
+    if not val:
+        return ""
+    val = val.strip()
+    for junk in ("더보기", "닫기"):
+        if val.endswith(junk):
+            val = val[:-len(junk)].strip()
+    return val
+
+
+def fetch_company_info(session: requests.Session, company_id: str):
+    info = {k: "" for k in COMPANY_INFO_FIELDS}
+    try:
+        r = session.get(COMPANY_DETAIL_URL.format(company_id=company_id), timeout=15)
+        if r.status_code != 200:
+            return info
+
+        m = LOGO_URL_RE.search(r.text)
+        if m:
+            url = m.group(0)
+            if url.startswith("//"):
+                url = "https:" + url
+            elif url.startswith("http://"):
+                url = "https://" + url[len("http://"):]
+            info["logo_url"] = url
+
+        text = BeautifulSoup(r.text, "html.parser").get_text("\n", strip=True)
+
+        ceo_m = CEO_NAME_RE.search(text)
+        if ceo_m:
+            info["ceo_name"] = _clean_field(ceo_m.group(1))
+
+        year_m = FOUNDED_YEAR_RE.search(text)
+        if year_m:
+            info["founded_year"] = _clean_field(year_m.group(1))
+
+        games_m = FLAGSHIP_GAMES_RE.search(text)
+        if games_m:
+            info["flagship_games"] = _clean_field(games_m.group(1))
+
+        home_m = HOMEPAGE_LABEL_RE.search(text)
+        if home_m:
+            info["homepage_url"] = home_m.group(1).strip()
+        else:
+            loc_m = LOCATION_LINE_RE.search(text)
+            if loc_m:
+                url_m = URL_IN_TEXT_RE.search(loc_m.group(1))
+                if url_m:
+                    info["homepage_url"] = url_m.group(0)
+
+        return info
+    except Exception:
+        return info
+
+
+def backfill_company_logos(jobs, verbose=True):
+    session = make_session()
+    info_cache = load_company_info_cache()
+
+    company_ids = sorted({j.get("company_id") for j in jobs if j.get("company_id")})
+    missing = [cid for cid in company_ids if not info_cache.get(cid, {}).get("logo_url")]
+
+    if verbose:
+        print(f"[logo] 전체 회사 수: {len(company_ids)}곳 / 정보 없는 회사: {len(missing)}곳")
+
+    for i, company_id in enumerate(missing, 1):
+        info = fetch_company_info(session, company_id)
+        if any(info.values()):
+            info_cache[company_id] = info
+        if verbose and i % 30 == 0:
+            print(f"[logo] {i}/{len(missing)}곳 완료")
+        time.sleep(0.2)
+
+    save_company_info_cache(info_cache)
+
+    for j in jobs:
+        cid = j.get("company_id")
+        info = info_cache.get(cid, {}) if cid else {}
+        j["company_logo_url"] = info.get("logo_url", "")
+        j["company_ceo"] = info.get("ceo_name", "")
+        j["company_founded_year"] = info.get("founded_year", "")
+        j["company_flagship_games"] = info.get("flagship_games", "")
+        j["company_homepage"] = info.get("homepage_url", "")
+
+    return jobs
+
+
+def fetch_job_detail_info(session: requests.Session, gi_no: str):
+    try:
+        r = session.get(MOBILE_DETAIL_URL.format(gi_no=gi_no), timeout=15)
+        if r.status_code != 200:
+            return None, None
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        text = soup.get_text("\n", strip=True)
+        m = CATEGORY_FIELD_RE.search(text)
+        cats = None
+        if m:
+            raw = m.group(1).strip()
+            parsed = [c.strip() for c in raw.split(",") if c.strip()]
+            cats = parsed if parsed else None
+
+        logo_url = None
+        m2 = LOGO_URL_RE.search(r.text)
+        if m2:
+            logo_url = m2.group(0)
+            if logo_url.startswith("//"):
+                logo_url = "https:" + logo_url
+            elif logo_url.startswith("http://"):
+                logo_url = "https://" + logo_url[len("http://"):]
+
+        return cats, logo_url
+    except Exception:
+        return None, None
+
+
+def enrich_with_categories(jobs, verbose=True):
+    session = make_session()
+    cat_cache = load_category_cache()
+
+    to_fetch = [j["gi_no"] for j in jobs if j["gi_no"] not in cat_cache]
+    already_cached = len(jobs) - len(to_fetch)
+    if verbose:
+        print(f"[category] 캐시 보유: {already_cached}건 / 새로 조회할 공고: {len(to_fetch)}건")
+
+    for i, gi_no in enumerate(to_fetch, 1):
+        cats, _logo_url = fetch_job_detail_info(session, gi_no)
+        if cats is not None:
+            cat_cache[gi_no] = ";".join(cats)
+        if verbose and i % 50 == 0:
+            print(f"[category] {i}/{len(to_fetch)}건 완료")
+        time.sleep(0.15)
+
+    save_category_cache(cat_cache)
+
+    for j in jobs:
+        raw = cat_cache.get(j["gi_no"], "")
+        j["job_categories"] = raw.split(";") if raw else []
+        j["job_function"] = j["job_categories"][0] if j["job_categories"] else classify_job_function(j["title"])
+
+    return jobs
+
+
+# ----------------------------------------------------------------------------
+# 크롤링 파이프라인
+# ----------------------------------------------------------------------------
+
+def fetch(session: requests.Session, url: str, **kwargs) -> requests.Response:
+    resp = session.get(url, timeout=15, **kwargs)
+    resp.raise_for_status()
+    return resp
+
+
+def _extract_gi_nos(html: str):
+    return set(GI_NO_RE.findall(html))
+
+
+def debug_dump():
+    session = make_session()
+    print("[debug] 후보 URL들의 1페이지 vs 2페이지 비교 중...\n")
+    working = []
+
+    for i, url_tmpl in enumerate(LIST_URL_CANDIDATES):
+        extra_headers = request_headers_for(url_tmpl)
+        try:
+            r1 = fetch(session, url_tmpl.format(page=1), headers=extra_headers)
+            time.sleep(0.3)
+            r2 = fetch(session, url_tmpl.format(page=2), headers=extra_headers)
+        except Exception as e:
+            print(f"  - 후보 {i} ({url_tmpl}) 요청 실패: {e}")
+            continue
+
+        ids1 = _extract_gi_nos(r1.text)
+        ids2 = _extract_gi_nos(r2.text)
+
+        out1 = DEBUG_DIR / f"list_candidate_{i}_page1.html"
+        out2 = DEBUG_DIR / f"list_candidate_{i}_page2.html"
+        out1.write_text(r1.text, encoding="utf-8")
+        out2.write_text(r2.text, encoding="utf-8")
+
+        if not ids1:
+            print(f"  - 후보 {i} ({url_tmpl}): 1페이지에서 공고링크를 못 찾음")
+            continue
+
+        is_different = bool(ids2) and ids1 != ids2
+        status = "정상 작동" if is_different else "실패 (2페이지 중복)"
+        print(f"  - 후보 {i} ({url_tmpl}) -> {status}")
+
+        if is_different:
+            working.append(i)
+
+    print()
+    if working:
+        print(f"[debug] 정상 작동 후보: {working} -> python gamejob_tracker.py --run 실행 가능")
+
+
+def parse_list_page(html: str):
+    soup = BeautifulSoup(html, "html.parser")
+    jobs = []
+    seen_rows = set()
+
+    for a in soup.find_all("a", href=True):
+        m = GI_NO_RE.search(a["href"])
+        if not m:
+            continue
+        gi_no = m.group(1)
+
+        row = a.find_parent("tr") or a.find_parent("li") or a.parent
+        row_key = id(row)
+        if row_key in seen_rows:
+            continue
+        seen_rows.add(row_key)
+
+        row_text = row.get_text(" ", strip=True) if row else ""
+
+        company_name, company_id = None, None
+        comp_a = row.find("a", href=COMPANY_RE) if row else None
+        if comp_a:
+            company_name = comp_a.get_text(strip=True)
+            cm = COMPANY_RE.search(comp_a["href"])
+            company_id = cm.group(1) if cm else None
+
+        title = a.get_text(strip=True)
+
+        career_m = re.search(r"(경력\s*무관|신입|경력\s*\d+년\s*[↑~]?\s*\d*년?)", row_text)
+        edu_m = re.search(r"(학력무관|고등학교졸업 이하|대학졸업\([^)]+\))", row_text)
+        employ_m = re.search(r"(정규직|계약직|인턴직|아르바이트|프리랜서|병역특례|파견직|교육생|헤드헌팅)", row_text)
+        deadline_m = re.search(r"(채용시|\d{2}/\d{2}\([가-힣]\)|~\d{2}/\d{2}|\d+일 전|\d+시간 전)", row_text)
+
+        jobs.append({
+            "gi_no": gi_no,
+            "title": title,
+            "company_name": company_name,
+            "company_id": company_id,
+            "career": career_m.group(1) if career_m else None,
+            "education": edu_m.group(1) if edu_m else None,
+            "employment_type": employ_m.group(1) if employ_m else None,
+            "deadline_raw": deadline_m.group(1) if deadline_m else None,
+            "job_function": classify_job_function(title),
+            "job_categories": [],
+            "company_logo_url": "",
+            "company_ceo": "",
+            "company_founded_year": "",
+            "company_flagship_games": "",
+            "company_homepage": "",
+        })
+
+    return jobs
+
+
+def find_working_url_template(session: requests.Session):
+    for url_tmpl in LIST_URL_CANDIDATES:
+        extra_headers = request_headers_for(url_tmpl)
+        try:
+            r1 = fetch(session, url_tmpl.format(page=1), headers=extra_headers)
+            ids1 = _extract_gi_nos(r1.text)
+            if not ids1:
+                continue
+            time.sleep(0.3)
+            r2 = fetch(session, url_tmpl.format(page=2), headers=extra_headers)
+            ids2 = _extract_gi_nos(r2.text)
+            if ids2 and ids1 != ids2:
+                return url_tmpl
+        except Exception:
+            continue
+    return None
+
+
+TOTAL_COUNT_RE = re.compile(r"전체\s*\(\s*([\d,]+)\s*\)")
+
+
+def get_total_count(session: requests.Session):
+    try:
+        r = fetch(session, MAIN_LIST_URL)
+        text = BeautifulSoup(r.text, "html.parser").get_text(" ", strip=True)
+        m = TOTAL_COUNT_RE.search(text)
+        if m:
+            return int(m.group(1).replace(",", ""))
+    except Exception:
+        pass
+    return None
+
+
+def crawl_all_listings(max_pages=200, sleep_sec=0.5, verbose=True):
+    session = make_session()
+    all_jobs = {}
+    genuinely_empty_streak = 0
+
+    if verbose:
+        print("[crawl] 페이지네이션 방식 확인 중...")
+    working_url_tmpl = find_working_url_template(session)
+
+    if not working_url_tmpl:
+        if verbose:
+            print("[crawl] 작동하는 URL 패턴을 찾지 못했습니다.")
+        return []
+
+    if verbose:
+        print(f"[crawl] 사용할 URL 패턴: {working_url_tmpl}")
+
+    total_count = get_total_count(session)
+    if verbose and total_count:
+        print(f"[crawl] 전체 공고 예상 수: {total_count}건")
+
+    extra_headers = request_headers_for(working_url_tmpl)
+    hard_stop_page = max_pages
+    if total_count:
+        hard_stop_page = min(max_pages, (total_count // 40) + 15)
+
+    for page in range(1, hard_stop_page + 1):
+        html = None
+        try:
+            r = fetch(session, working_url_tmpl.format(page=page), headers=extra_headers)
+            if GI_NO_RE.search(r.text):
+                html = r.text
+        except Exception:
+            pass
+
+        if not html:
+            genuinely_empty_streak += 1
+            if genuinely_empty_streak >= 3:
+                if verbose:
+                    print("[crawl] 3페이지 연속 빈 데이터 -> 수집 완료")
+                break
+            time.sleep(sleep_sec)
+            continue
+
+        genuinely_empty_streak = 0
+        jobs = parse_list_page(html)
+        new_count = 0
+        for j in jobs:
+            if j["gi_no"] not in all_jobs:
+                all_jobs[j["gi_no"]] = j
+                new_count += 1
+
+        if verbose:
+            print(f"[crawl] page {page}: {len(jobs)}건 파싱 / 신규 {new_count}건 (누적 {len(all_jobs)}건)")
+
+        if total_count and len(all_jobs) >= total_count:
+            if verbose:
+                print(f"[crawl] 목표 수({total_count}건) 도달 -> 종료")
+            break
+
+        time.sleep(sleep_sec)
+
+    return list(all_jobs.values())
+
+
+# ----------------------------------------------------------------------------
+# Gemini AI 기반 딥다이브 월간 리포트 자동 생성기
+# ----------------------------------------------------------------------------
+
+def extract_company_top_titles(jobs, company_name, limit=10):
+    titles = [j.get("title", "") for j in jobs if j.get("company_name") == company_name]
+    return titles[:limit]
+
+
+def build_ai_deep_prompt(stats, top_inc_titles, top_dec_titles, gamejob_news, dc_news, gnews_industry, gnews_top_inc):
+    gain_comp = stats["compGain"]["name"] if stats.get("compGain") else "없음"
+    drop_comp = stats["compDrop"]["name"] if stats.get("compDrop") else "없음"
+
+    inc_titles_str = "\n".join([f"  * {t}" for t in top_inc_titles]) if top_inc_titles else "  (공고 목록 없음)"
+    dec_titles_str = "\n".join([f"  * {t}" for t in top_dec_titles]) if top_dec_titles else "  (공고 목록 없음)"
+
+    gj_news_str = "\n".join([f"  * {n}" for n in gamejob_news]) if gamejob_news else "  (크롤링 뉴스 없음)"
+    dc_news_str = "\n".join([f"  * {n}" for n in dc_news]) if dc_news else "  (커뮤니티 이슈 없음)"
+    gn_ind_str = "\n".join([f"  * {n}" for n in gnews_industry]) if gnews_industry else "  (구글 뉴스 없음)"
+    gn_inc_str = "\n".join([f"  * {n}" for n in gnews_top_inc]) if gnews_top_inc else "  (구글 뉴스 없음)"
+
+    group_lines = "\n".join([
+        f"- {d['g']}: 이번달 {d['cur']}건 (지난달 {d['prev']}건, 변동: {d['delta']:+}건)"
+        for d in stats["groupDeltas"]
+    ])
+
+    return f"""너는 게임 산업 전문 수석 애널리스트(Senior Industry Analyst)야.
+아래 **실시간 수집된 채용 공고 데이터, 기업 세부 공고 타이틀, 구글 뉴스 RSS, 게임잡 공식 뉴스, 게임메카 커뮤니티 동향**을 종합 결합하여, 깊이 있는 월간 게임 채용 시장 심층 리포트를 작성해줘.
+
+[데이터 수집 기준: {stats['date']} (전월: {stats['prevDate']})]
+- 전체 공고 수: 이번달 {stats['latestTotal']}건 (전월 대비 {stats['totalDelta']:+}건)
+
+[공고 최다 증가 기업: {gain_comp} (전월 대비 {stats['compGain']['delta'] if stats.get('compGain') else 0:+}건)]
+- 실제 모바일/PC 등록 공고 제목:
+{inc_titles_str}
+- 최근 구글 뉴스 ({gain_comp}):
+{gn_inc_str}
+
+[공고 최다 감소 기업: {drop_comp} (전월 대비 {stats['compDrop']['delta'] if stats.get('compDrop') else 0:+}건)]
+- 실제 모바일/PC 등록 공고 제목:
+{dec_titles_str}
+
+[직군 그룹별 변동]
+{group_lines}
+
+[실시간 수집 1: 구글 뉴스 (게임 업계 일반)]
+{gn_ind_str}
+
+[실시간 수집 2: 게임잡 공식 뉴스 (https://www.gamejob.co.kr/Community/news)]
+{gj_news_str}
+
+[실시간 수집 3: 게임메카 / 업계 커뮤니티 최근 이슈 (gall.dcinside.com/gamemeca)]
+{dc_news_str}
+
+--------------------------------------------------
+[리포트 작성 가이드 - 3단계 심층 분석]
+
+### 📊 1. 게임 시장 거시 동향 & 직군별 수요 원인 분석
+- 구글 뉴스, 게임잡 뉴스, 커뮤니티 동향과 직군 변동 수치를 연계하여, 개발/아트/기획 등 특정 직군 공고가 늘거나 줄어든 **실제 업계 환경 원인**(멀티플랫폼 확장, 언리얼5 전환, 생성형 AI 파이프라인, 서브컬처/MMO 시장 변화 등)을 분석해줘.
+
+### 📰 2. 주요 기업 변동 원인 & 프로젝트 딥다이브 (핵심)
+- **{gain_comp} 분석**: 등록된 실제 공고 제목과 구글/게임잡 뉴스를 결합하여, 지금 어떤 신작 프로젝트/게임 IP를 개발 중인지, 어떤 채용 트랙(공채/인턴십/수시)이 작동하고 있는지 세부 원인을 구체적으로 설명해줘.
+- **{drop_comp} 분석**: 공고가 줄어든 기업의 경우 프로젝트 개발 완료, 출시 후 라이브 전환, 조직 효율화 등 배경 원인을 언급해줘.
+
+### 💡 3. 채용 시장 시사점 & 기술 스택 전망
+- 게임 구직자, 현직자 및 HR 담당자가 대비해야 할 핵심 역량, 우대 기술 스택(C++, 유니티/언리얼, TA, AI 최적화 등) 및 전망을 3~4문장으로 정리해줘.
+
+전문 분석가 톤으로 가독성 높게 작성하고, 중요 키워드는 **볼드체**로 강조해줘.
+"""
+
+
+def generate_ai_monthly_report(jobs, run_date: str):
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        print("[ai] GEMINI_API_KEY 환경변수가 없습니다. AI 뉴스 리포트 생성을 건너끕니다.")
+        return
+
+    prev = load_latest_previous_snapshot(run_date)
+    if not prev:
+        print("[ai] 이전 달 스냅샷이 없어서 비교 분석 리포트를 생성하지 않습니다.")
+        return
+
+    prev_date, prev_rows = prev
+    session = make_session()
+
+    # 1. 뉴스 크롤링 (구글 뉴스 RSS + 게임잡 뉴스 + DC 게임메카)
+    print("[ai] 구글 뉴스 RSS, 게임잡 뉴스 및 게임메카 이슈 크롤링 중...")
+    gnews_industry = fetch_google_news_rss("게임 업계 채용")
+    gamejob_news = fetch_gamejob_news(session)
+    dc_news = fetch_dc_gamemeca_news(session)
+
+    # 2. 기업 공고 수치 통계 계산
+    cur_comp = Counter(j["company_name"] for j in jobs if j.get("company_name"))
+    prev_comp = Counter(r["company_name"] for r in prev_rows if r.get("company_name"))
+
+    comp_deltas = []
+    all_companies = set(cur_comp.keys()) | set(prev_comp.keys())
+    for comp in all_companies:
+        cur_c = cur_comp.get(comp, 0)
+        prev_c = prev_comp.get(comp, 0)
+        comp_deltas.append((comp, cur_c - prev_c, cur_c, prev_c))
+
+    comp_deltas.sort(key=lambda x: x[1], reverse=True)
+    top_inc = comp_deltas[0] if comp_deltas else None
+    top_dec = comp_deltas[-1] if comp_deltas else None
+
+    # 공고 증가 1위 기업 구글 뉴스 추가 수집
+    gnews_top_inc = fetch_google_news_rss(top_inc[0]) if top_inc else []
+
+    # 3. 주요 기업의 실제 등록 공고 타이틀 추출
+    top_inc_titles = extract_company_top_titles(jobs, top_inc[0]) if top_inc else []
+    top_dec_titles = extract_company_top_titles(jobs, top_dec[0]) if top_dec else []
+
+    # 4. 직군별 변동 집계
+    group_order = ['개발','아트','기획','QA','사업','지원부서']
+    group_info = [
+        ['개발', ['클라이언트','서버','엔진','AI 개발','플랫폼','인프라','프로그래','개발자','백엔드','프론트','네트워크','기술지원']],
+        ['아트', ['디자인','원화','모델링','애니메이션','이펙트','그래픽','아트','일러스트','컨셉','사운드','영상']],
+        ['QA', ['QA','테스터','운영','고객','커뮤니티']],
+        ['사업', ['사업','마케팅','홍보','영업','BD','퍼블리싱','미디어','전략']],
+        ['기획', ['기획','시나리오','레벨디자인','밸런스']],
+    ]
+    
+    def get_job_cats(j):
+        if j.get("job_categories"):
+            return j["job_categories"].split(";")
+        return [j.get("job_function", "지원부서")]
+
+    def classify_grp(cat_str):
+        for g, kws in group_info:
+            if any(kw in cat_str for kw in kws):
+                return g
+        return '지원부서'
+
+    def group_counts(job_list):
+        c = {g: 0 for g in group_order}
+        for j in job_list:
+            groups_hit = set(classify_grp(cat) for cat in get_job_cats(j))
+            for g in groups_hit:
+                c[g] += 1
+        return c
+
+    cur_g = group_counts(jobs)
+    prev_g = group_counts(prev_rows)
+    group_deltas = [{"g": g, "cur": cur_g[g], "prev": prev_g[g], "delta": cur_g[g] - prev_g[g]} for g in group_order]
+
+    stats = {
+        "date": run_date,
+        "prevDate": prev_date,
+        "latestTotal": len(jobs),
+        "totalDelta": len(jobs) - len(prev_rows),
+        "compGain": {"name": top_inc[0], "delta": top_inc[1]} if top_inc else None,
+        "compDrop": {"name": top_dec[0], "delta": top_dec[1]} if top_dec else None,
+        "groupDeltas": group_deltas
+    }
+
+    # 5. 프롬프트 생성 및 Gemini 호출
+    prompt = build_ai_deep_prompt(stats, top_inc_titles, top_dec_titles, gamejob_news, dc_news, gnews_industry, gnews_top_inc)
+
+    print("[ai] Gemini 2.5 AI + Google Search Grounding 딥다이브 분석 호출 중...")
+    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+
+    try:
+        resp = requests.post(
+            endpoint,
+            headers={"Content-Type": "application/json"},
+            json={
+                "contents": [{"parts": [{"text": prompt}]}],
+                "tools": [{"googleSearch": {}}]
+            },
+            timeout=120
+        )
+
+        if resp.status_code == 200:
+            data = resp.json()
+            candidates = data.get("candidates", [])
+            if candidates:
+                text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                if text:
+                    report_path = REPORT_DIR / f"{run_date}_ai_analysis.md"
+                    report_path.write_text(text, encoding="utf-8")
+
+                    latest_json_path = DATA_DIR / "latest_ai_report.json"
+                    latest_json_path.write_text(
+                        json.dumps({"date": run_date, "content": text}, ensure_ascii=False, indent=2),
+                        encoding="utf-8"
+                    )
+                    print(f"[ai] 뉴스 결합 딥다이브 월간 리포트 생성 완료! ({report_path})")
+                    return
+
+        print(f"[ai] Gemini API 호출 실패 ({resp.status_code}): {resp.text[:200]}")
+    except Exception as e:
+        print(f"[ai] Gemini API 요청 오류: {e}")
+
+
+# ----------------------------------------------------------------------------
+# 스냅샷 저장 및 마크다운 리포트 생성
+# ----------------------------------------------------------------------------
+
+def save_snapshot(jobs, run_date: str) -> Path:
+    path = SNAPSHOT_DIR / f"{run_date}.csv"
+    with path.open("w", newline="", encoding="utf-8-sig") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDNAMES)
+        w.writeheader()
+        for j in jobs:
+            row = {k: j.get(k) for k in FIELDNAMES}
+            row["job_categories"] = ";".join(j.get("job_categories") or [])
+            w.writerow(row)
+    print(f"[save] 스냅샷 저장 완료: {path} ({len(jobs)}건)")
+    update_snapshot_manifest()
+    return path
+
+
+def update_snapshot_manifest():
+    files = sorted(p.name for p in SNAPSHOT_DIR.glob("*.csv"))
+    manifest_path = SNAPSHOT_DIR / "index.json"
+    manifest_path.write_text(json.dumps(files, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"[save] 매니페스트(index.json) 갱신 완료 ({len(files)}개 파일)")
+
+
+def load_latest_previous_snapshot(before_date: str):
+    files = sorted(SNAPSHOT_DIR.glob("*.csv"))
+    files = [f for f in files if f.stem < before_date]
+    if not files:
+        return None
+    latest = files[-1]
+    with latest.open(encoding="utf-8-sig") as f:
+        rows = list(csv.DictReader(f))
+    return latest.stem, rows
+
+
+def _write_csv(path: Path, rows):
+    with path.open("w", newline="", encoding="utf-8-sig") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDNAMES)
+        w.writeheader()
+        for r in rows:
+            row = {k: r.get(k) for k in FIELDNAMES}
+            if isinstance(row.get("job_categories"), list):
+                row["job_categories"] = ";".join(row["job_categories"])
+            w.writerow(row)
+
+
+def generate_report(jobs, run_date: str):
+    prev = load_latest_previous_snapshot(run_date)
+    current_ids = {j["gi_no"] for j in jobs}
+
+    lines = [f"# 게임잡 채용공고 리포트 ({run_date})\n\n",
+             f"- 현재 전체 공고 수: **{len(jobs)}건**\n"]
+
+    if prev:
+        prev_date, prev_rows = prev
+        prev_ids = {r["gi_no"] for r in prev_rows}
+        new_ids = current_ids - prev_ids
+        removed_ids = prev_ids - current_ids
+
+        lines.append(f"- 비교 대상 이전 스냅샷: {prev_date}\n")
+        lines.append(f"- 신규 등록 공고: **{len(new_ids)}건**\n")
+        lines.append(f"- 삭제/마감 처리된 공고: **{len(removed_ids)}건**\n")
+
+        new_jobs = [j for j in jobs if j["gi_no"] in new_ids]
+        removed_jobs = [r for r in prev_rows if r["gi_no"] in removed_ids]
+
+        _write_csv(REPORT_DIR / f"{run_date}_new_jobs.csv", new_jobs)
+        _write_csv(REPORT_DIR / f"{run_date}_removed_jobs.csv", removed_jobs)
+
+    func_counter = Counter()
+    for j in jobs:
+        cats = j.get("job_categories") or [j["job_function"]]
+        for c in cats:
+            func_counter[c] += 1
+
+    lines.append("\n## 직무별 공고 수\n")
+    for func, cnt in func_counter.most_common():
+        lines.append(f"- {func}: {cnt}건\n")
+
+    company_counter = Counter(j["company_name"] for j in jobs if j["company_name"])
+    lines.append("\n## 공고 상위 기업 TOP 10\n")
+    for name, cnt in company_counter.most_common(10):
+        lines.append(f"- {name}: {cnt}건\n")
+
+    report_path = REPORT_DIR / f"{run_date}_report.md"
+    report_path.write_text("".join(lines), encoding="utf-8")
+    print(f"[report] 기본 마크다운 리포트 생성 완료: {report_path}")
+
+
+# ----------------------------------------------------------------------------
+# 엔트리포인트
+# ----------------------------------------------------------------------------
+
+def main():
+    parser = argparse.ArgumentParser(description="게임잡 채용공고 트래킹 스크립트")
+    parser.add_argument("--debug", action="store_true", help="크롤링 테스트 및 HTML 디버그")
+    parser.add_argument("--run", action="store_true", help="실제 크롤링 + 리포트 생성 실행")
+    parser.add_argument("--max-pages", type=int, default=200)
+    parser.add_argument("--skip-categories", action="store_true", help="모바일 상세 직종 수집 건너뛰기")
+    args = parser.parse_args()
+
+    if args.debug:
+        debug_dump()
+        return
+
+    if args.run:
+        run_date = datetime.now().strftime("%Y-%m-%d")
+        print(f"[run] {run_date} 트래킹 파이프라인 시작...")
+        jobs = crawl_all_listings(max_pages=args.max_pages)
+        if not jobs:
+            print("[run] 공고를 하나도 모으지 못했습니다.")
+            return
+
+        if not args.skip_categories:
+            jobs = enrich_with_categories(jobs)
+
+        jobs = backfill_company_logos(jobs)
+
+        save_snapshot(jobs, run_date)
+        generate_report(jobs, run_date)
+        generate_ai_monthly_report(jobs, run_date)
+        return
+
+    parser.print_help()
+
+
+if __name__ == "__main__":
+    main()
