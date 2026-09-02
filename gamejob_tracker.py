@@ -1,6 +1,6 @@
 """
 gamejob_tracker.py
-게임잡(gamejob.co.kr) 채용공고 트래킹 스크립트
+게임잡(gamejob.co.kr) 채용공고 트래킹 + Gemini AI 기반 월간 종합 리포트 자동 생성 스크립트
 
 기능
 ----
@@ -8,14 +8,16 @@ gamejob_tracker.py
 2. 직무별(모바일 상세 페이지 파싱 + 키워드 분류), 기업별 공고 수 집계
 3. 기업 로고, 대표자, 설립연도, 대표게임, 홈페이지 등 기업 정보 자동 수집 및 캐싱
 4. 이전 스냅샷과 비교하여 신규 등록 / 마감(삭제) 공고 파악
-5. 대시보드(index.html) 연동용 index.json 및 월별 리포트/CSV 자동 생성
+5. [NEW] Gemini API + Google Search Grounding을 활용한 최신 뉴스 기반 월간 AI 분석 리포트 자동 생성
+6. 대시보드(index.html) 연동용 index.json 및 리포트 파일 자동 저장
 
 사용법
 ------
     # 1) 사이트 구조 및 크롤링 가능 여부 테스트
     python gamejob_tracker.py --debug
 
-    # 2) 실제 수집 실행 (정기 실행/GitHub Actions용)
+    # 2) 실제 수집 + Gemini AI 월간 리포트 자동 생성 실행
+    # (환경변수 GEMINI_API_KEY 가 설정되어 있으면 AI 리포트까지 함께 생성됩니다)
     python gamejob_tracker.py --run
 
 설치
@@ -26,6 +28,7 @@ gamejob_tracker.py
 import argparse
 import csv
 import json
+import os
 import re
 import time
 from collections import Counter
@@ -540,7 +543,97 @@ def crawl_all_listings(max_pages=200, sleep_sec=0.5, verbose=True):
 
 
 # ----------------------------------------------------------------------------
-# 스냅샷 저장 및 리포트 생성
+# Gemini AI 기반 월간 뉴스 & 채용 트렌드 종합 리포트 생성기
+# ----------------------------------------------------------------------------
+
+def generate_ai_monthly_report(jobs, run_date: str):
+    """Gemini 2.5 API + Google Search Grounding 기능을 활용하여
+    데이터 분석 + 최신 뉴스/프로젝트 이슈 수집 + 월간 종합 리포트 작성을 자동화합니다."""
+
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        print("[ai] GEMINI_API_KEY 환경변수가 없습니다. AI 뉴스 리포트 생성을 건너끕니다.")
+        return
+
+    prev = load_latest_previous_snapshot(run_date)
+    if not prev:
+        print("[ai] 이전 달 스냅샷이 없어서 비교 분석 리포트를 생성하지 않습니다.")
+        return
+
+    prev_date, prev_rows = prev
+
+    # 통계 계산
+    cur_comp = Counter(j["company_name"] for j in jobs if j.get("company_name"))
+    prev_comp = Counter(r["company_name"] for r in prev_rows if r.get("company_name"))
+
+    comp_deltas = []
+    all_companies = set(cur_comp.keys()) | set(prev_comp.keys())
+    for comp in all_companies:
+        cur_c = cur_comp.get(comp, 0)
+        prev_c = prev_comp.get(comp, 0)
+        comp_deltas.append((comp, cur_c - prev_c, cur_c, prev_c))
+
+    comp_deltas.sort(key=lambda x: x[1], reverse=True)
+    top_increase = comp_deltas[0] if comp_deltas else None
+    top_decrease = comp_deltas[-1] if comp_deltas else None
+
+    prompt = f"""너는 대한민국 게임 산업 전문 애널리스트이자 채용 시장 분석가야.
+제공된 게임잡 채용 스냅샷 데이터와 너의 Google Search 기능(최신 회사 뉴스, 신작 게임 프로젝트 발표, 게임 업계 이슈 등)을 종합 활용하여 깊이 있는 분석 리포트를 작성해줘.
+
+[이번 달 게임잡 채용 데이터]
+- 수집 기준일: {run_date} (지난달: {prev_date})
+- 전체 공고 수: 이번달 {len(jobs)}건 / 지난달 {len(prev_rows)}건 (전월 대비: {len(jobs) - len(prev_rows):+}건)
+- 공고 증가 1위 기업: {top_increase[0] if top_increase else '없음'} (이번달 {top_increase[2]}건, 전월대비 {top_increase[1]:+}건)
+- 공고 감소 1위 기업: {top_decrease[0] if top_decrease else '없음'} (이번달 {top_decrease[2]}건, 전월대비 {top_decrease[1]:+}건)
+
+[분석 요구사항 및 리포트 작성 가이드]
+1. 직무 및 고용형태 동향 분석: 어떤 직무군과 고용형태가 시장을 이끌고 있는지 요약해줘.
+2. 최신 회사 뉴스 & 게임 프로젝트 연계 분석:
+   - 공고 변동이 큰 주요 기업들({top_increase[0] if top_increase else ''}, {top_decrease[0] if top_decrease else ''} 등)에 대해 최신 소식, 신작 개발 상황, 구조조정/투자 이슈 등을 실시간 검색하여 채용 증감의 배경 원인을 분석해줘.
+   - 최근 게임 업계 트렌드(AI 도입, 모바일/PC/콘솔 다변화, 특정 장르 유행 등)와 연결지어 설명해줘.
+3. 구직자/현직자 시사점: 현재 채용 시장 흐름에서 게임 구직자들이 가져가야 할 전략 및 향후 전망을 정리해줘.
+4. 문체: 가독성 높은 한국어로 작성하고 핵심 키워드는 **볼드체**로 강조해줘. 마크다운 형식으로 작성해줘."""
+
+    print("[ai] Gemini AI + Google Search Grounding 분석 시작...")
+    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+
+    try:
+        resp = requests.post(
+            endpoint,
+            headers={"Content-Type": "application/json"},
+            json={
+                "contents": [{"parts": [{"text": prompt}]}],
+                "tools": [{"googleSearch": {}}]
+            },
+            timeout=90
+        )
+
+        if resp.status_code == 200:
+            data = resp.json()
+            candidates = data.get("candidates", [])
+            if candidates:
+                text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                if text:
+                    # 마크다운 리포트 저장
+                    report_path = REPORT_DIR / f"{run_date}_ai_analysis.md"
+                    report_path.write_text(text, encoding="utf-8")
+
+                    # 프론트엔드 자동 노출용 최신 리포트 JSON 저장
+                    latest_json_path = DATA_DIR / "latest_ai_report.json"
+                    latest_json_path.write_text(
+                        json.dumps({"date": run_date, "content": text}, ensure_ascii=False, indent=2),
+                        encoding="utf-8"
+                    )
+                    print(f"[ai] AI 월간 종합 분석 리포트 생성 완료! ({report_path})")
+                    return
+
+        print(f"[ai] Gemini API 호출 실패 (상태 코드: {resp.status_code}): {resp.text[:200]}")
+    except Exception as e:
+        print(f"[ai] Gemini API 요청 중 오류 발생: {e}")
+
+
+# ----------------------------------------------------------------------------
+# 스냅샷 저장 및 마크다운 리포트 생성
 # ----------------------------------------------------------------------------
 
 def save_snapshot(jobs, run_date: str) -> Path:
@@ -608,8 +701,6 @@ def generate_report(jobs, run_date: str):
 
         _write_csv(REPORT_DIR / f"{run_date}_new_jobs.csv", new_jobs)
         _write_csv(REPORT_DIR / f"{run_date}_removed_jobs.csv", removed_jobs)
-    else:
-        lines.append("- 이전 스냅샷 없음 (최초 실행). 다음 스냅샷부터 비교 가능합니다.\n")
 
     func_counter = Counter()
     for j in jobs:
@@ -628,7 +719,7 @@ def generate_report(jobs, run_date: str):
 
     report_path = REPORT_DIR / f"{run_date}_report.md"
     report_path.write_text("".join(lines), encoding="utf-8")
-    print(f"[report] 마크다운 리포트 생성 완료: {report_path}")
+    print(f"[report] 기본 마크다운 리포트 생성 완료: {report_path}")
 
 
 # ----------------------------------------------------------------------------
@@ -660,8 +751,12 @@ def main():
 
         jobs = backfill_company_logos(jobs)
 
+        # 1. CSV 스냅샷 및 수치 리포트 생성
         save_snapshot(jobs, run_date)
         generate_report(jobs, run_date)
+
+        # 2. Gemini AI 종합 뉴스 분석 리포트 생성
+        generate_ai_monthly_report(jobs, run_date)
         return
 
     parser.print_help()
