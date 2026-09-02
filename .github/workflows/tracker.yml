@@ -14,8 +14,6 @@ jobs:
     steps:
       - name: 저장소 체크아웃
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: 파이썬 설치
         uses: actions/setup-python@v5
@@ -25,21 +23,15 @@ jobs:
       - name: 필요한 패키지 설치
         run: pip install requests beautifulsoup4
 
-      - name: 크롤링 및 Gemini AI 딥다이브 분석 자동 실행
+      - name: 크롤링 및 Claude AI 딥다이브 분석 자동 실행
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python gamejob_tracker.py --run
-
-      - name: 원격 최신 코드 동기화 (충돌 방지)
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull origin main --rebase --autostash
 
       - name: 분석 결과 자동 커밋 & 푸시
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "🤖 [자동업데이트] 채용 데이터 수집 및 AI 딥다이브 리포트 생성"
+          commit_message: "🤖 [자동업데이트] 채용 데이터 수집 및 Claude AI 딥다이브 리포트 생성"
           file_pattern: "data/**"
           skip_dirty_check: false
           skip_empty_commit: true
