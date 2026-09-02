@@ -7,272 +7,104 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
-  :root{
-    --bg:#ffffff;
-    --surface:#f7f8fa;
-    --surface-2:#f2f3f5;
-    --border:#eaebee;
-    --text:#191f28;
-    --muted:#8b95a1;
-    --blue:#3182f6;
-    --blue-soft:#eef4ff;
-    --up:#f04452;
-    --up-soft:#fef0f1;
-    --down:#3182f6;
-    --down-soft:#eef4ff;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg);
-    color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic','Apple SD Gothic Neo',sans-serif;
-    line-height:1.5;
-    font-size:14.5px;
-  }
+  :root{ --bg:#ffffff; --surface:#f7f8fa; --surface-2:#f2f3f5; --border:#eaebee; --text:#191f28; --muted:#8b95a1; --blue:#3182f6; --blue-soft:#eef4ff; --up:#f04452; --up-soft:#fef0f1; --down:#3182f6; --down-soft:#eef4ff; }
+  *{box-sizing:border-box;} html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.5;font-size:14.5px;}
   .wrap{max-width:1040px;margin:0 auto;padding:24px 20px 100px;}
-
   header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:20px;}
   header h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-0.01em;}
-  .header-logo{height:26px;width:auto;object-fit:cover;object-position:center;vertical-align:middle;}
+  .header-logo{height:26px;width:auto;vertical-align:middle;}
   .header-title{display:flex;align-items:center;gap:10px;}
-  header p{margin:2px 0 0;color:var(--muted);font-size:12.5px;}
-
-  .upload-btn{
-    position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:6px;
-    background:var(--blue);color:#fff;border:none;border-radius:10px;
-    padding:9px 15px;font-size:12.5px;font-weight:600;cursor:pointer;
-  }
+  .upload-btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:6px;background:var(--blue);color:#fff;border:none;border-radius:10px;padding:9px 15px;font-size:12.5px;font-weight:600;cursor:pointer;}
   .upload-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
-
   .empty{text-align:center;padding:120px 20px;color:var(--muted);}
   .empty strong{color:var(--text);display:block;font-size:17px;margin-bottom:8px;font-weight:700;}
-
   .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;}
   .stat-card{background:var(--surface);border-radius:12px;padding:14px 16px;}
   .stat-card .label{color:var(--muted);font-size:12px;font-weight:500;margin-bottom:4px;}
-  .stat-card .num{font-size:21px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;}
-  .stat-card .num.up{color:var(--up);}
-  .stat-card .num.down{color:var(--down);}
+  .stat-card .num{font-size:21px;font-weight:700;}
+  .stat-card .num.up{color:var(--up);} .stat-card .num.down{color:var(--down);}
   @media (max-width:640px){.stat-row{grid-template-columns:1fr;}}
-
-  /* 상단 탭 */
   .nav-tabs{display:flex;gap:22px;border-bottom:1px solid var(--border);margin-bottom:18px;overflow-x:auto;}
-  .nav-tab{
-    background:none;border:none;padding:11px 0;font-size:15px;font-weight:700;
-    color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;
-  }
+  .nav-tab{background:none;border:none;padding:11px 0;font-size:15px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;}
   .nav-tab.active{color:var(--text);border-bottom-color:var(--text);}
-  .view{display:none;}
-  .view.active{display:block;}
-
+  .view{display:none;} .view.active{display:block;}
   .panel{background:var(--surface);border-radius:14px;padding:16px 18px;margin-bottom:16px;}
   .panel-title{font-size:13.5px;font-weight:700;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;}
   .panel-title .see-all{font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;}
   .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   @media (max-width:760px){.grid-2{grid-template-columns:1fr;}}
   canvas{max-width:100%;}
-
-  .search-input{
-    width:100%;padding:10px 13px;background:var(--surface);border:1px solid var(--border);
-    border-radius:10px;color:var(--text);font-size:13.5px;margin-bottom:10px;
-  }
-  .search-input:focus{outline:1px solid var(--blue);}
-
+  .search-input{width:100%;padding:10px 13px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13.5px;margin-bottom:10px;}
   .sort-chips{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
-  .chip{background:var(--surface-2);border:none;border-radius:999px;padding:6px 12px;
-    font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;}
+  .chip{background:var(--surface-2);border:none;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;}
   .chip.active{background:var(--text);color:#fff;}
-
-  /* 랭킹 테이블 */
   table.rank{width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed;}
-  table.rank th{
-    text-align:right;color:var(--muted);font-weight:600;font-size:11px;
-    padding:6px 8px;border-bottom:1px solid var(--border);
-  }
+  table.rank th{text-align:right;color:var(--muted);font-weight:600;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--border);}
   table.rank th:first-child, table.rank th:nth-child(2){text-align:left;}
   table.rank td{padding:10px 8px;border-bottom:1px solid var(--border);text-align:right;vertical-align:middle;overflow:hidden;}
-  table.rank th:nth-child(1), table.rank td:nth-child(1){width:30px;text-align:center;color:var(--muted);font-size:12px;}
+  table.rank th:nth-child(1), table.rank td:nth-child(1){width:30px;text-align:center;}
   table.rank th:nth-child(2), table.rank td:nth-child(2){width:auto;}
   table.rank th:nth-child(3), table.rank td:nth-child(3){width:70px;}
   table.rank th:nth-child(4), table.rank td:nth-child(4){width:56px;}
   table.rank th:nth-child(5), table.rank td:nth-child(5){width:120px;}
   table.rank td.name-cell{text-align:left;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;}
-  table.rank tbody tr{cursor:pointer;}
-  table.rank tbody tr:hover{background:#fff;}
-  table.rank tbody tr.selected{background:var(--blue-soft);}
-  .spark-cell svg{display:block;margin-left:auto;}
-  .delta-up{color:var(--up);font-weight:700;}
-  .delta-down{color:var(--down);font-weight:700;}
-  .delta-flat{color:#b0b8c1;}
-  .delta-new{color:var(--up);font-weight:700;font-size:11.5px;}
+  table.rank tbody tr{cursor:pointer;} table.rank tbody tr:hover{background:#fff;} table.rank tbody tr.selected{background:var(--blue-soft);}
+  .delta-up{color:var(--up);font-weight:700;} .delta-down{color:var(--down);font-weight:700;} .delta-flat{color:#b0b8c1;} .delta-new{color:var(--up);font-weight:700;font-size:11.5px;}
   .row-count{color:var(--muted);font-size:11.5px;margin-top:8px;}
-
-  /* 상세 패널 */
   .detail-panel{background:var(--surface);border-radius:14px;padding:18px;margin-bottom:16px;display:none;}
   .detail-panel.show{display:block;}
   .dp-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;}
-  .dp-title{font-size:17px;font-weight:700;}
-  .dp-count{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;}
-  .dp-sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  .dp-title{font-size:17px;font-weight:700;} .dp-count{font-size:20px;font-weight:700;} .dp-sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
   .dp-close{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;font-weight:600;}
   .dp-back{background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;font-weight:700;padding:0;}
-  .dp-back:hover{text-decoration:underline;}
-  .breakdown-lists{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0;}
-  @media (max-width:700px){.breakdown-lists{grid-template-columns:1fr;}}
-
-  .dp-homepage-btn{
-    border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12.5px;
-    font-weight:700;color:var(--text);text-decoration:none;
-  }
-  .dp-homepage-btn:hover{background:var(--surface-2);}
-
+  .dp-homepage-btn{border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12.5px;font-weight:700;color:var(--text);text-decoration:none;}
   .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;margin-top:16px;}
-  .info-item-wide{grid-column:1 / -1;}
-  .info-label{font-size:12px;color:var(--muted);margin-bottom:3px;}
-  .info-value{font-size:14.5px;font-weight:700;color:var(--text);}
-
-  .stock-section{margin-top:26px;}
-  .stock-section h3{font-size:14px;font-weight:700;margin:0 0 12px;}
-  .chart-subtitle{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px;}
-
-  .donut-section{display:flex;gap:24px;align-items:center;flex-wrap:wrap;}
-  .donut-canvas-wrap{width:150px;height:150px;flex-shrink:0;}
-  .donut-legend{flex:1;min-width:180px;}
-  .donut-legend-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
-  .donut-legend-row:last-child{border-bottom:none;}
+  .info-item-wide{grid-column:1 / -1;} .info-label{font-size:12px;color:var(--muted);margin-bottom:3px;} .info-value{font-size:14.5px;font-weight:700;color:var(--text);}
+  .stock-section{margin-top:26px;} .stock-section h3{font-size:14px;font-weight:700;margin:0 0 12px;}
+  .donut-section{display:flex;gap:24px;align-items:center;flex-wrap:wrap;} .donut-canvas-wrap{width:150px;height:150px;flex-shrink:0;}
+  .donut-legend{flex:1;min-width:180px;} .donut-legend-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
   .donut-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
-
   .podium{display:flex;justify-content:center;align-items:flex-end;gap:12px;margin-top:10px;}
-  .podium-item{
-    background:var(--surface-2);border-radius:12px;padding:14px 10px;text-align:center;
-    flex:1;max-width:150px;
-  }
-  .podium-item.first{
-    background:#fff7e0;border:2px solid #f2b84b;padding-top:20px;padding-bottom:18px;
-    transform:translateY(-8px);
-  }
-  .podium-medal{font-size:26px;line-height:1;}
-  .podium-item.first .podium-medal{font-size:32px;}
-  .podium-name{font-weight:700;font-size:12.5px;margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .podium-count{font-size:12px;color:var(--muted);margin-top:3px;}
-
-  .insight-panel{background:var(--blue-soft);}
-  .insight-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;}
-  .insight-list li{
-    font-size:13.5px;line-height:1.5;padding-left:20px;position:relative;
-  }
-  .insight-list li::before{content:'•';position:absolute;left:4px;color:var(--blue);font-weight:700;}
-  .insight-list b{font-weight:700;}
-  .insight-list .up-text{color:var(--up);font-weight:700;}
-  .insight-list .down-text{color:var(--down);font-weight:700;}
-  .insight-footnote{margin-top:12px;font-size:11px;color:var(--muted);}
-
-  .bd-block h4{font-size:12px;color:var(--muted);font-weight:700;margin:0 0 8px;}
-  .bd-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);}
-  .bd-row:last-child{border-bottom:none;}
+  .podium-item{background:var(--surface-2);border-radius:12px;padding:14px 10px;text-align:center;flex:1;max-width:150px;}
+  .podium-item.first{background:#fff7e0;border:2px solid #f2b84b;padding-top:20px;padding-bottom:18px;transform:translateY(-8px);}
+  .podium-medal{font-size:26px;line-height:1;} .podium-item.first .podium-medal{font-size:32px;}
+  .podium-name{font-weight:700;font-size:12.5px;margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;} .podium-count{font-size:12px;color:var(--muted);margin-top:3px;}
+  .insight-panel{background:var(--blue-soft);} .insight-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;}
+  .insight-list li{font-size:13.5px;line-height:1.5;padding-left:20px;position:relative;} .insight-list li::before{content:'•';position:absolute;left:4px;color:var(--blue);font-weight:700;}
+  .insight-list b{font-weight:700;} .insight-list .up-text{color:var(--up);font-weight:700;} .insight-list .down-text{color:var(--down);font-weight:700;}
   .detail-jobs .dj-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
-  .detail-jobs .dj-row:last-child{border-bottom:none;}
-  .dj-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
-  .dj-meta{color:var(--muted);font-size:11.5px;flex-shrink:0;}
+  .dj-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;} .dj-meta{color:var(--muted);font-size:11.5px;flex-shrink:0;}
   .placeholder-hint{color:var(--muted);font-size:13px;text-align:center;padding:20px 0;}
-
-  /* 월별 리포트 카드 UI */
   .report-card-list{display:flex;flex-direction:column;gap:12px;margin-top:10px;}
-  .report-item-card{
-    background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px;
-    display:flex;justify-content:space-between;align-items:center;cursor:pointer;
-    transition:all 0.15s ease;
-  }
+  .report-item-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
   .report-item-card:hover{border-color:var(--blue);box-shadow:0 4px 12px rgba(49,130,246,0.08);transform:translateY(-1px);}
-  .report-item-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;}
-  .report-item-sub{font-size:12.5px;color:var(--muted);}
-  .report-badge{
-    background:var(--blue-soft);color:var(--blue);font-size:12px;font-weight:700;
-    padding:4px 10px;border-radius:20px;white-space:nowrap;
-  }
-
-  /* 모달 팝업 스타일 */
-  .modal-overlay{
-    position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;
-    display:flex;align-items:center;justify-content:center;padding:20px;
-    opacity:0;pointer-events:none;transition:opacity 0.2s ease;
-  }
+  .report-item-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;} .report-item-sub{font-size:12.5px;color:var(--muted);}
+  .report-badge{background:var(--blue-soft);color:var(--blue);font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity 0.2s ease;}
   .modal-overlay.active{opacity:1;pointer-events:auto;}
-  .modal-container{
-    background:#fff;width:100%;max-width:780px;max-height:85vh;
-    border-radius:18px;box-shadow:0 12px 36px rgba(0,0,0,0.18);
-    display:flex;flex-direction:column;overflow:hidden;
-    transform:translateY(12px);transition:transform 0.2s ease;
-  }
-  .modal-overlay.active .modal-container{transform:translateY(0);}
-  .modal-header{
-    padding:16px 22px;border-bottom:1px solid var(--border);
-    display:flex;justify-content:space-between;align-items:center;background:#fff;gap:12px;
-  }
+  .modal-container{background:#fff;width:100%;max-width:780px;max-height:85vh;border-radius:18px;box-shadow:0 12px 36px rgba(0,0,0,0.18);display:flex;flex-direction:column;overflow:hidden;}
+  .modal-header{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:#fff;gap:12px;}
   .modal-title{font-size:16px;font-weight:700;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .modal-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-  .modal-btn{
-    background:var(--surface);border:1px solid var(--border);border-radius:8px;
-    padding:6px 11px;font-size:12px;font-weight:700;color:var(--text);cursor:pointer;
-    display:inline-flex;align-items:center;gap:4px;
-  }
-  .modal-btn:hover{background:var(--surface-2);}
+  .modal-btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 11px;font-size:12px;font-weight:700;color:var(--text);cursor:pointer;}
   .modal-btn-blue{background:var(--blue);color:#fff;border:none;}
-  .modal-btn-blue:hover{background:#2872e5;}
   .modal-close-btn{background:none;border:none;font-size:18px;color:var(--muted);cursor:pointer;font-weight:700;padding:0 4px;}
   .modal-body{padding:22px;overflow-y:auto;line-height:1.7;font-size:14px;color:#333d4b;}
-
-  /* AI 리포트 전용 카드 UI 스타일 */
-  .ai-section-card{
-    background:var(--surface);border-radius:12px;padding:16px 18px;margin-bottom:14px;
-    border:1px solid var(--border);
-  }
-  .ai-section-title{
-    font-size:15px;font-weight:700;color:var(--text);margin:0 0 10px 0;
-  }
-  .ai-section-body{font-size:13.5px;line-height:1.7;color:#333d4b;}
-  .ai-section-body ul{margin:6px 0;padding-left:18px;}
-  .ai-section-body li{margin-bottom:6px;}
-  .ai-section-body b{color:var(--text);background:#eef4ff;padding:1px 5px;border-radius:4px;}
-
-  .manual-generate-box{
-    margin-bottom:16px;background:var(--blue-soft);border-radius:12px;padding:14px 16px;
-    display:flex;justify-content:space-between;align-items:center;gap:12px;
-  }
-  .manual-generate-text{font-size:13px;font-weight:600;color:var(--text);}
-  .manual-generate-btn{
-    background:var(--blue);color:#fff;border:none;border-radius:8px;
-    padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;
-  }
+  .ai-section-card{background:var(--surface);border-radius:12px;padding:16px 18px;margin-bottom:14px;border:1px solid var(--border);}
+  .ai-section-title{font-size:15px;font-weight:700;color:var(--text);margin:0 0 10px 0;}
+  .ai-section-body{font-size:13.5px;line-height:1.7;color:#333d4b;} .ai-section-body ul{margin:6px 0;padding-left:18px;} .ai-section-body b{color:var(--text);background:#eef4ff;padding:1px 5px;border-radius:4px;}
+  .manual-generate-box{margin-bottom:16px;background:var(--blue-soft);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+  .manual-generate-text{font-size:13px;font-weight:600;color:var(--text);} .manual-generate-btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
 </style>
 </head>
 <body>
 <div class="wrap">
-
   <header>
-    <div class="header-title">
-      <img src="https://i.gamejob.co.kr/pc/images/gamejob_share.png" alt="GAMEJOB" class="header-logo">
-      <h1>게임잡 채용 트래커</h1>
-    </div>
-    <label class="upload-btn" id="uploadBtn" style="display:none;">
-      CSV 불러오기
-      <input type="file" id="fileInput" accept=".csv" multiple>
-    </label>
+    <div class="header-title"><img src="https://i.gamejob.co.kr/pc/images/gamejob_share.png" alt="GAMEJOB" class="header-logo"><h1>게임잡 채용 트래커</h1></div>
   </header>
-
-  <div id="emptyState" class="empty">
-    <strong>데이터를 불러오는 중이에요...</strong>
-    잠시 후에도 안 뜨면 GitHub Actions가 아직 한 번도 실행되지 않았을 수 있어요.
-  </div>
-
-  <div id="autoLoadNote" style="display:none;font-size:12px;color:var(--muted);margin:-10px 0 14px;">
-    © KONGSTUDIOS. All rights reserved.
-  </div>
-
+  <div id="emptyState" class="empty"><strong>데이터를 불러오는 중이에요...</strong></div>
   <div id="content" style="display:none;">
     <div class="stat-row" id="statRow"></div>
-
     <div class="nav-tabs">
       <button class="nav-tab active" data-view="home">홈</button>
       <button class="nav-tab" data-view="company">기업별</button>
@@ -280,1211 +112,189 @@
       <button class="nav-tab" data-view="employment">고용형태별</button>
       <button class="nav-tab" data-view="report">월별 리포트</button>
     </div>
-
-    <!-- 홈 -->
     <div class="view active" id="view-home">
-      <div class="panel" id="homeTrendPanel" style="display:none;">
-        <div class="panel-title">월별 전체 공고 수 추이</div>
-        <canvas id="trendChart" height="70"></canvas>
-      </div>
+      <div class="panel" id="homeTrendPanel" style="display:none;"><div class="panel-title">월별 전체 공고 수 추이</div><canvas id="trendChart" height="70"></canvas></div>
       <div class="grid-2">
-        <div class="panel">
-          <div class="panel-title">공고 많은 직무 TOP 10 <span class="see-all" data-goto="category">전체보기</span></div>
-          <table class="rank" id="homeCategoryTable">
-            <thead><tr><th></th><th>직무</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div class="panel">
-          <div class="panel-title">공고 많은 기업 TOP 10 <span class="see-all" data-goto="company">전체보기</span></div>
-          <table class="rank" id="homeCompanyTable">
-            <thead><tr><th></th><th>기업</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <div class="panel"><div class="panel-title">공고 많은 직무 TOP 10 <span class="see-all" data-goto="category">전체보기</span></div><table class="rank" id="homeCategoryTable"><thead><tr><th></th><th>직무</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead><tbody></tbody></table></div>
+        <div class="panel"><div class="panel-title">공고 많은 기업 TOP 10 <span class="see-all" data-goto="company">전체보기</span></div><table class="rank" id="homeCompanyTable"><thead><tr><th></th><th>기업</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead><tbody></tbody></table></div>
       </div>
-
-      <div class="panel insight-panel" id="insightPanel" style="display:none;">
-        <div class="panel-title">📝 이번 달 채용 트렌드 요약</div>
-        <ul class="insight-list" id="insightList"></ul>
-        <div class="insight-footnote">데이터 기반으로 자동 생성된 요약이에요. 상단 '월별 리포트' 탭에서 AI 딥 분석을 확인할 수 있어요.</div>
-      </div>
-      <div class="panel" id="insightPlaceholder" style="display:none;">
-        <div class="placeholder-hint">스냅샷이 2개 이상 쌓이면(다음 달부터) 여기에 트렌드 요약이 자동으로 나와요.</div>
-      </div>
+      <div class="panel insight-panel" id="insightPanel" style="display:none;"><div class="panel-title">📝 이번 달 채용 트렌드 요약</div><ul class="insight-list" id="insightList"></ul></div>
     </div>
-
-    <!-- 기업별 -->
     <div class="view" id="view-company">
       <div class="detail-panel" id="companyDetail"></div>
       <div id="companyListSection">
         <input type="text" class="search-input" id="companySearch" placeholder="기업명 검색...">
-        <div class="sort-chips" data-kind="company">
-          <button class="chip active" data-sort="count">공고 많은순</button>
-          <button class="chip" data-sort="increase">증가순</button>
-          <button class="chip" data-sort="decrease">감소순</button>
-          <button class="chip" data-sort="name">이름순</button>
-        </div>
-        <table class="rank" id="companyRankTable">
-          <thead><tr><th></th><th>기업</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
-          <tbody id="companyRankBody"></tbody>
-        </table>
-        <div class="row-count" id="companyRowCount"></div>
+        <div class="sort-chips" data-kind="company"><button class="chip active" data-sort="count">공고 많은순</button><button class="chip" data-sort="increase">증가순</button><button class="chip" data-sort="decrease">감소순</button><button class="chip" data-sort="name">이름순</button></div>
+        <table class="rank" id="companyRankTable"><thead><tr><th></th><th>기업</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead><tbody id="companyRankBody"></tbody></table>
       </div>
     </div>
-
-    <!-- 공고별(직종) -->
     <div class="view" id="view-category">
       <div class="detail-panel" id="categoryDetail"></div>
       <input type="text" class="search-input" id="categorySearch" placeholder="직무 검색...">
-      <div class="sort-chips" data-kind="category">
-        <button class="chip active" data-sort="count">공고 많은순</button>
-        <button class="chip" data-sort="increase">증가순</button>
-        <button class="chip" data-sort="decrease">감소순</button>
-        <button class="chip" data-sort="name">이름순</button>
-      </div>
-      <table class="rank" id="categoryRankTable">
-        <thead><tr><th></th><th>직무</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
-        <tbody id="categoryRankBody"></tbody>
-      </table>
-      <div class="row-count" id="categoryRowCount"></div>
+      <div class="sort-chips" data-kind="category"><button class="chip active" data-sort="count">공고 많은순</button><button class="chip" data-sort="increase">증가순</button><button class="chip" data-sort="decrease">감소순</button><button class="chip" data-sort="name">이름순</button></div>
+      <table class="rank" id="categoryRankTable"><thead><tr><th></th><th>직무</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead><tbody id="categoryRankBody"></tbody></table>
     </div>
-
-    <!-- 고용형태별 -->
     <div class="view" id="view-employment">
       <div class="detail-panel" id="employmentDetail"></div>
-      <div class="panel">
-        <div class="panel-title">고용형태별 비율</div>
-        <div class="donut-section">
-          <div class="donut-canvas-wrap"><canvas id="employmentDonutCanvas"></canvas></div>
-          <div class="donut-legend" id="employmentDonutLegend"></div>
-        </div>
-      </div>
-      <table class="rank" id="employmentRankTable">
-        <thead><tr><th></th><th>고용형태</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
-        <tbody id="employmentRankBody"></tbody>
-      </table>
+      <div class="panel"><div class="panel-title">고용형태별 비율</div><div class="donut-section"><div class="donut-canvas-wrap"><canvas id="employmentDonutCanvas"></canvas></div><div class="donut-legend" id="employmentDonutLegend"></div></div></div>
+      <table class="rank" id="employmentRankTable"><thead><tr><th></th><th>고용형태</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead><tbody id="employmentRankBody"></tbody></table>
     </div>
-
-    <!-- 월별 리포트 -->
     <div class="view" id="view-report">
-      <div class="panel">
-        <div class="panel-title">📅 월별 AI 분석 리포트 보관함</div>
-        <div id="reportListContainer">
-          <div class="placeholder-hint">스냅샷 데이터를 확인하고 있어요...</div>
-        </div>
-      </div>
+      <div class="panel"><div class="panel-title">📅 월별 AI 분석 리포트 보관함</div><div id="reportListContainer"><div class="placeholder-hint">스냅샷 데이터를 확인하고 있어요...</div></div></div>
     </div>
-
   </div>
 </div>
 
-<!-- 팝업 모달 레이어 -->
 <div class="modal-overlay" id="reportModal">
   <div class="modal-container">
     <div class="modal-header">
       <div class="modal-title" id="modalTitle">월별 분석 리포트</div>
-      <div class="modal-actions">
-        <button class="modal-btn modal-btn-blue" onclick="downloadReport()">📥 다운로드</button>
-        <button class="modal-btn" onclick="shareReport()">🔗 공유하기</button>
-        <button class="modal-close-btn" onclick="closeReportModal()">✕</button>
-      </div>
+      <div class="modal-actions"><button class="modal-btn modal-btn-blue" onclick="downloadReport()">📥 다운로드</button><button class="modal-btn" onclick="shareReport()">🔗 공유하기</button><button class="modal-close-btn" onclick="closeReportModal()">✕</button></div>
     </div>
-    <div class="modal-body" id="modalBody">
-      <div class="placeholder-hint">리포트 내용을 불러오는 중입니다...</div>
-    </div>
+    <div class="modal-body" id="modalBody"><div class="placeholder-hint">불러오는 중입니다...</div></div>
   </div>
 </div>
 
 <script>
-let snapshots = [];
-let charts = {};
-let selected = {company:null, category:null, employment:null};
-let sortStateByKind = {company:'count', category:'count', employment:'count'};
-
+let snapshots = []; let charts = {}; let selected = {company:null, category:null, employment:null}; let sortStateByKind = {company:'count', category:'count', employment:'count'};
 let currentReportData = { date: '', title: '', text: '', snapIndex: null };
 
-document.getElementById('fileInput').addEventListener('change', async (e)=>{
-  const files = Array.from(e.target.files);
-  if(!files.length) return;
-  const parsed = await Promise.all(files.map(parseFile));
-  applySnapshots(parsed);
-});
-
-function applySnapshots(parsed){
-  snapshots = parsed.filter(Boolean).sort((a,b)=> a.date.localeCompare(b.date));
-  if(!snapshots.length){
-    alert('csv를 읽지 못했어요. gamejob_tracker.py가 만든 snapshots 폴더의 csv 파일이 맞는지 확인해주세요.');
-    return;
-  }
-  render();
-}
-
 async function tryAutoLoad(){
-  const host = window.location.hostname;
-  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const host = window.location.hostname; const pathParts = window.location.pathname.split('/').filter(Boolean);
   if(!host.endsWith('github.io') || !pathParts.length) return false;
-
-  const owner = host.split('.')[0];
-  const repo = pathParts[0];
-
+  const owner = host.split('.')[0], repo = pathParts[0];
   try{
-    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/data/snapshots`;
-    const res = await fetch(apiUrl, {cache:'no-store'});
+    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/data/snapshots`, {cache:'no-store'});
     if(!res.ok) return false;
-    const items = await res.json();
-    const csvFiles = items.filter(it => it.name.endsWith('.csv'));
+    const items = await res.json(); const csvFiles = items.filter(it => it.name.endsWith('.csv'));
     if(!csvFiles.length) return false;
-
     const parsed = await Promise.all(csvFiles.map(async (it)=>{
-      const r = await fetch(it.download_url, {cache:'no-store'});
-      if(!r.ok) return null;
-      const text = await r.text();
-      const dateMatch = it.name.match(/(\d{4}-\d{2}-\d{2})/);
-      const date = dateMatch ? dateMatch[1] : it.name;
-      const parsedCsv = Papa.parse(text, {header:true, skipEmptyLines:true});
-      return {date, jobs: parsedCsv.data.filter(row=>row.gi_no)};
+      const r = await fetch(it.download_url, {cache:'no-store'}); if(!r.ok) return null;
+      const text = await r.text(), dateMatch = it.name.match(/(\d{4}-\d{2}-\d{2})/);
+      return {date: dateMatch ? dateMatch[1] : it.name, jobs: Papa.parse(text, {header:true, skipEmptyLines:true}).data.filter(row=>row.gi_no)};
     }));
-
-    applySnapshots(parsed);
-    document.getElementById('autoLoadNote').style.display = 'block';
-    return true;
-  }catch(err){
-    return false;
-  }
+    snapshots = parsed.filter(Boolean).sort((a,b)=> a.date.localeCompare(b.date));
+    render(); return true;
+  }catch(err){ return false; }
 }
 
 window.addEventListener('DOMContentLoaded', async ()=>{
-  const ok = await tryAutoLoad();
-  if(!ok){
-    document.getElementById('uploadBtn').style.display = 'inline-flex';
-    document.getElementById('emptyState').innerHTML =
-      '<strong>자동으로 데이터를 못 불러왔어요</strong>' +
-      'GitHub Actions가 아직 안 돌았거나 로컬에서 열어본 경우일 수 있어요.<br>' +
-      '위쪽 "CSV 불러오기" 버튼으로 직접 올려서 확인할 수 있어요.';
-  }
+  if(!(await tryAutoLoad())) document.getElementById('emptyState').innerHTML = '<strong>데이터를 불러올 수 없어요.</strong> 깃허브 Actions 실행을 확인해주세요.';
 });
 
-function parseFile(file){
-  return new Promise((resolve)=>{
-    const dateMatch = file.name.match(/(\d{4}-\d{2}-\d{2})/);
-    const date = dateMatch ? dateMatch[1] : file.name;
-    Papa.parse(file, {
-      header:true, skipEmptyLines:true, encoding:'UTF-8',
-      complete: (res)=> resolve({date, jobs: res.data.filter(r=>r.gi_no)}),
-      error: ()=> resolve(null)
-    });
-  });
-}
+function escapeHtml(s){ return s==null?'':String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function jobCategories(j){ return j.job_categories&&j.job_categories.trim() ? j.job_categories.split(';').map(s=>s.trim()).filter(Boolean) : [j.job_function || '기타/미분류']; }
 
-function escapeHtml(s){
-  if(s==null) return '';
-  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
+const GROUP_INFO = [['개발','💻',['클라이언트','서버','엔진','AI 개발','플랫폼','인프라','프로그래','개발자','백엔드','프론트']],['아트','🎨',['디자인','원화','모델링','애니메이션','이펙트','그래픽','아트','일러스트','사운드','영상']],['QA','🧪',['QA','테스트','운영','고객','커뮤니티']],['사업','📈',['사업','마케팅','홍보','영업','BD','퍼블리싱','전략']],['기획','📋',['기획','시나리오','레벨디자인','밸런스']]];
+const GROUP_ORDER = ['개발','아트','기획','QA','사업','지원부서'];
+function classifyBroadGroup(s){ for(const [g, e, kws] of GROUP_INFO){ if(kws.some(kw=>s.includes(kw))) return [g, e]; } return ['지원부서', '🗂️']; }
+function categoryLabel(n){ return `${classifyBroadGroup(n)[1]} ${n}`; }
+function employmentBucket(j){ const t=j.employment_type||''; return t.includes('정규')?'정규직':(t.includes('계약')?'계약직':(t.includes('인턴')?'인턴직':(t.includes('파견')?'파견직':'기타'))); }
 
-function jobCategories(j){
-  if(j.job_categories && j.job_categories.trim()){
-    return j.job_categories.split(';').map(s=>s.trim()).filter(Boolean);
-  }
-  return [j.job_function || '기타/미분류'];
-}
+const KEY_FNS = {company:j=>[j.company_name].filter(Boolean), category:jobCategories, employment:j=>[employmentBucket(j)]};
 
-const GROUP_INFO = [
-  ['개발', '💻', ['클라이언트','서버','엔진','AI 개발','플랫폼','인프라','프로그래','개발자','백엔드','프론트','네트워크','기술지원']],
-  ['아트', '🎨', ['디자인','원화','모델링','애니메이션','이펙트','그래픽','아트','일러스트','컨셉','사운드','영상']],
-  ['QA', '🧪', ['QA','테스트','운영','고객','커뮤니티']],
-  ['사업', '📈', ['사업','마케팅','홍보','영업','BD','퍼블리싱','미디어','전략']],
-  ['기획', '📋', ['기획','시나리오','레벨디자인','밸런스']],
-];
-const DEFAULT_GROUP = ['지원부서', '🗂️'];
-
-function classifyBroadGroup(categoryStr){
-  const s = categoryStr || '';
-  for(const [group, emoji, keywords] of GROUP_INFO){
-    if(keywords.some(kw => s.includes(kw))) return [group, emoji];
-  }
-  return DEFAULT_GROUP;
-}
-
-function categoryLabel(name){
-  const [, emoji] = classifyBroadGroup(name);
-  return `${emoji} ${name}`;
-}
-
-function employmentBucket(j){
-  const t = j.employment_type || '';
-  if(t.includes('정규')) return '정규직';
-  if(t.includes('계약')) return '계약직';
-  if(t.includes('인턴')) return '인턴직';
-  if(t.includes('파견')) return '파견직';
-  return '기타';
-}
-
-const KEY_FNS = {
-  company: j => [j.company_name].filter(Boolean),
-  category: jobCategories,
-  employment: j => [employmentBucket(j)],
-};
-
-/* ---------- 진입점 ---------- */
 function render(){
-  document.getElementById('emptyState').style.display='none';
-  document.getElementById('content').style.display='block';
-
-  setupNav();
-  renderStats();
-  renderHomeTrend();
-
-  ['company','category','employment'].forEach(kind=>{
-    buildEntityState(kind);
-  });
-
-  renderHomeRankings();
-  setupEntityView('company');
-  setupEntityView('category');
-  renderEmploymentView();
-  renderInsightSummary();
-  renderReportView();
+  document.getElementById('emptyState').style.display='none'; document.getElementById('content').style.display='block';
+  setupNav(); renderStats(); renderHomeTrend(); ['company','category','employment'].forEach(buildEntityState);
+  renderHomeRankings(); setupEntityView('company'); setupEntityView('category'); renderEmploymentView(); renderInsightSummary(); renderReportView();
 }
 
 function setupNav(){
-  document.querySelectorAll('.nav-tab').forEach(btn=>{
-    btn.onclick = ()=>{
-      const view = btn.dataset.view;
-      if(['company','category','employment'].includes(view) && selected[view]){
-        selected[view] = null;
-        if(view==='company' || view==='category') drawEntityTable(view);
-        if(view==='employment') renderEmploymentView();
-        drawDetail(view);
-      }
-      switchView(view);
-    };
+  document.querySelectorAll('.nav-tab').forEach(b=>b.onclick=()=>{
+    const v=b.dataset.view; if(['company','category','employment'].includes(v)&&selected[v]){ selected[v]=null; if(v!=='employment') drawEntityTable(v); else renderEmploymentView(); drawDetail(v); }
+    document.querySelectorAll('.nav-tab').forEach(x=>x.classList.toggle('active',x===b)); document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+v));
   });
-  document.querySelectorAll('.see-all').forEach(el=>{
-    el.onclick = ()=> switchView(el.dataset.goto);
-  });
-}
-
-function switchView(view){
-  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
-  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+view));
+  document.querySelectorAll('.see-all').forEach(el=>el.onclick=()=>document.querySelector(`.nav-tab[data-view="${el.dataset.goto}"]`).click());
 }
 
 function destroyChart(key){ if(charts[key]){ charts[key].destroy(); delete charts[key]; } }
 
-/* ---------- 상단 요약 ---------- */
 function renderStats(){
-  const latest = snapshots[snapshots.length-1];
-  const prev = snapshots.length>1 ? snapshots[snapshots.length-2] : null;
-  const row = document.getElementById('statRow');
-  let newCount=null, removedCount=null;
-  if(prev){
-    const prevIds = new Set(prev.jobs.map(j=>j.gi_no));
-    const curIds = new Set(latest.jobs.map(j=>j.gi_no));
-    newCount = latest.jobs.filter(j=>!prevIds.has(j.gi_no)).length;
-    removedCount = prev.jobs.filter(j=>!curIds.has(j.gi_no)).length;
-  }
-  row.innerHTML = `
-    <div class="stat-card"><div class="label">전체 공고 (${latest.date})</div><div class="num">${latest.jobs.length}</div></div>
-    <div class="stat-card"><div class="label">신규 등록</div><div class="num ${newCount!=null?'up':''}">${newCount!=null?'+'+newCount:'—'}</div></div>
-    <div class="stat-card"><div class="label">삭제 / 마감</div><div class="num ${removedCount!=null?'down':''}">${removedCount!=null?'-'+removedCount:'—'}</div></div>
-  `;
+  const latest=snapshots[snapshots.length-1], prev=snapshots.length>1?snapshots[snapshots.length-2]:null;
+  let nc=null, rc=null;
+  if(prev){ const pIds=new Set(prev.jobs.map(j=>j.gi_no)), cIds=new Set(latest.jobs.map(j=>j.gi_no)); nc=latest.jobs.filter(j=>!pIds.has(j.gi_no)).length; rc=prev.jobs.filter(j=>!cIds.has(j.gi_no)).length; }
+  document.getElementById('statRow').innerHTML=`<div class="stat-card"><div class="label">전체 공고 (${latest.date})</div><div class="num">${latest.jobs.length}</div></div><div class="stat-card"><div class="label">신규 등록</div><div class="num ${nc!=null?'up':''}">${nc!=null?'+'+nc:'—'}</div></div><div class="stat-card"><div class="label">삭제 / 마감</div><div class="num ${rc!=null?'down':''}">${rc!=null?'-'+rc:'—'}</div></div>`;
 }
 
 function renderHomeTrend(){
-  const panel = document.getElementById('homeTrendPanel');
-  if(snapshots.length<2){ panel.style.display='none'; return; }
-  panel.style.display='block';
-  destroyChart('trend');
-  charts.trend = new Chart(document.getElementById('trendChart'), {
-    type:'line',
-    data:{ labels: snapshots.map(s=>s.date), datasets:[{
-      data: snapshots.map(s=>s.jobs.length),
-      borderColor:'#3182f6', backgroundColor:'rgba(49,130,246,0.08)',
-      fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:'#3182f6'
-    }]},
-    options:{ plugins:{legend:{display:false}},
-      scales:{ x:{ticks:{color:'#8b95a1'},grid:{display:false}}, y:{ticks:{color:'#8b95a1'},grid:{color:'#eaebee'}} } }
-  });
+  const p=document.getElementById('homeTrendPanel'); if(snapshots.length<2){ p.style.display='none'; return; } p.style.display='block'; destroyChart('trend');
+  charts.trend = new Chart(document.getElementById('trendChart'),{type:'line',data:{labels:snapshots.map(s=>s.date),datasets:[{data:snapshots.map(s=>s.jobs.length),borderColor:'#3182f6',backgroundColor:'rgba(49,130,246,0.08)',fill:true,tension:0.3,pointRadius:3}]},options:{plugins:{legend:{display:false}},scales:{x:{display:false},y:{display:false}}}});
 }
 
-/* ---------- 엔티티 공통 로직 ---------- */
-const entityState = {};
-
-function buildSeries(getKeys){
-  const map = {};
-  snapshots.forEach((snap, idx)=>{
-    const counts = {};
-    snap.jobs.forEach(j=>{
-      getKeys(j).forEach(k=>{ if(k) counts[k]=(counts[k]||0)+1; });
-    });
-    Object.keys(counts).forEach(k=>{
-      if(!map[k]) map[k] = new Array(snapshots.length).fill(0);
-      map[k][idx] = counts[k];
-    });
-  });
-  return map;
-}
-
+const entityState={};
 function buildEntityState(kind){
-  const map = buildSeries(KEY_FNS[kind]);
-
-  let infoMap = {};
-  if(kind==='company'){
-    const latestSnap = snapshots[snapshots.length-1];
-    latestSnap.jobs.forEach(j=>{
-      if(j.company_name && !infoMap[j.company_name]){
-        infoMap[j.company_name] = {
-          logo: j.company_logo_url || null,
-          ceo: j.company_ceo || null,
-          foundedYear: j.company_founded_year || null,
-          flagshipGames: j.company_flagship_games || null,
-          homepage: j.company_homepage || null,
-        };
-      }
-    });
-  }
-
-  const entries = Object.keys(map).map(name=>{
-    const series = map[name];
-    const latest = series[series.length-1];
-    const prev = series.length>1 ? series[series.length-2] : null;
-    const delta = prev!=null ? latest-prev : null;
-    const pct = (delta!=null && prev>0) ? (delta/prev*100) : null;
-    const info = infoMap[name] || {};
-    return {name, series, latest, delta, pct, isNew: prev===0 && latest>0, logo: info.logo || null,
-      ceo: info.ceo || null, foundedYear: info.foundedYear || null,
-      flagshipGames: info.flagshipGames || null, homepage: info.homepage || null};
+  const map={}, infoMap={};
+  snapshots.forEach((snap, idx)=>{
+    const counts={}; snap.jobs.forEach(j=>{ KEY_FNS[kind](j).forEach(k=>{ if(k) counts[k]=(counts[k]||0)+1; }); if(kind==='company'&&j.company_name&&!infoMap[j.company_name]) infoMap[j.company_name]={logo:j.company_logo_url}; });
+    Object.keys(counts).forEach(k=>{ if(!map[k]) map[k]=new Array(snapshots.length).fill(0); map[k][idx]=counts[k]; });
   });
-  entityState[kind] = entries;
+  entityState[kind] = Object.keys(map).map(name=>{ const series=map[name], latest=series[series.length-1], prev=series.length>1?series[series.length-2]:null, delta=prev!=null?latest-prev:null; return {name, series, latest, delta, logo:infoMap[name]?.logo}; });
 }
 
-function sortEntries(entries, sortKey){
-  const arr = [...entries];
-  if(sortKey==='count') arr.sort((a,b)=> b.latest-a.latest);
-  else if(sortKey==='increase') arr.sort((a,b)=> (b.delta??-Infinity)-(a.delta??-Infinity));
-  else if(sortKey==='decrease') arr.sort((a,b)=> (a.delta??Infinity)-(b.delta??Infinity));
-  else if(sortKey==='name') arr.sort((a,b)=> a.name.localeCompare(b.name));
-  return arr;
+function sortEntries(arr, sk){ const a=[...arr]; if(sk==='count') a.sort((x,y)=>y.latest-x.latest); else if(sk==='increase') a.sort((x,y)=>(y.delta??-9999)-(x.delta??-9999)); else if(sk==='decrease') a.sort((x,y)=>(x.delta??9999)-(y.delta??9999)); else a.sort((x,y)=>x.name.localeCompare(y.name)); return a; }
+function logoImg(e){ return e.logo?`<img src="${escapeHtml(e.logo)}" width="20" height="20" style="border-radius:4px;object-fit:contain;margin-right:8px;vertical-align:middle;border:1px solid var(--border)">`:''; }
+function deltaHtml(e){ if(e.delta==null) return '<span class="delta-flat">—</span>'; return `<span class="${e.delta>0?'delta-up':(e.delta<0?'delta-down':'delta-flat')}">${e.delta>0?'▲ +':(e.delta<0?'▼ ':'')}${e.delta}</span>`; }
+function renderRankRows(tb, entries, kind, limit, nav){
+  tb.innerHTML = (limit?entries.slice(0,limit):entries).map((e,i)=>`<tr class="${selected[kind]===e.name?'selected':''}" onclick="selectEntity('${kind}','${escapeHtml(e.name).replace(/'/g,"\\'")}',${nav})"><td>${i+1}</td><td class="name-cell" style="display:flex;align-items:center;">${kind==='company'?logoImg(e):''}<span style="overflow:hidden;text-overflow:ellipsis;">${escapeHtml(kind==='category'?categoryLabel(e.name):e.name)}</span></td><td></td><td>${e.latest}</td><td>${deltaHtml(e)}</td></tr>`).join('');
+}
+function selectEntity(k,n,nav){ selected[k]=nav?n:(selected[k]===n?null:n); if(nav) document.querySelector(`.nav-tab[data-view="${k}"]`).click(); else{ renderHomeRankings(); if(k==='employment') renderEmploymentView(); else drawEntityTable(k); drawDetail(k); } }
+
+function renderHomeRankings(){ renderRankRows(document.querySelector('#homeCategoryTable tbody'), sortEntries(entityState.category,'count'), 'category', 10, true); renderRankRows(document.querySelector('#homeCompanyTable tbody'), sortEntries(entityState.company,'count'), 'company', 10, true); }
+function setupEntityView(k){ document.getElementById(k+'Search').oninput=()=>drawEntityTable(k); document.querySelectorAll(`.sort-chips[data-kind="${k}"] .chip`).forEach(c=>c.onclick=()=>{ document.querySelectorAll(`.sort-chips[data-kind="${k}"] .chip`).forEach(x=>x.classList.remove('active')); c.classList.add('active'); sortStateByKind[k]=c.dataset.sort; drawEntityTable(k); }); drawEntityTable(k); }
+function drawEntityTable(k){ const q=document.getElementById(k+'Search').value.trim().toLowerCase(); const ents=sortEntries(entityState[k].filter(e=>e.name.toLowerCase().includes(q)), sortStateByKind[k]); renderRankRows(document.getElementById(k+'RankBody'), ents, k, null, false); document.getElementById(k+'RowCount')&&(document.getElementById(k+'RowCount').textContent=`${ents.length}개`); }
+
+function computeStats(idx){
+  if(snapshots.length<2) return null; const cur=snapshots[idx??snapshots.length-1], prv=snapshots[(idx??snapshots.length-1)-1];
+  const gc=(js)=>{ const c={}; GROUP_ORDER.forEach(g=>c[g]=0); js.forEach(j=>{ new Set(jobCategories(j).map(x=>classifyBroadGroup(x)[0])).forEach(g=>c[g]++); }); return c; };
+  const cg=gc(cur.jobs), pg=gc(prv.jobs); const gd=GROUP_ORDER.map(g=>({g, cur:cg[g], prev:pg[g], delta:cg[g]-pg[g]}));
+  const cp=sortEntries(entityState.company.filter(e=>e.series[idx??snapshots.length-1]!=null),'increase');
+  return { date:cur.date, prevDate:prv.date, latestTotal:cur.jobs.length, totalDelta:cur.jobs.length-prv.jobs.length, groupDeltas:gd, compGain:cp[0]?{name:cp[0].name, delta:cp[0].delta}:null, compDrop:cp[cp.length-1]?{name:cp[cp.length-1].name, delta:cp[cp.length-1].delta}:null };
 }
 
-function sparklineSvg(series){
-  const w=54,h=22,pad=2;
-  const min=Math.min(...series), max=Math.max(...series);
-  const range=(max-min)||1;
-  const step = series.length>1 ? (w-2*pad)/(series.length-1) : 0;
-  const pts = series.map((v,i)=>{
-    const x=pad+i*step, y=h-pad-((v-min)/range)*(h-2*pad);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(' ');
-  const last=series[series.length-1], first=series[0];
-  const color = last>first?'#f04452':(last<first?'#3182f6':'#c7ccd3');
-  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
-}
+function renderInsightSummary(){ const p=document.getElementById('insightPanel'), st=computeStats(); if(!st){ p.style.display='none'; return; } p.style.display='block'; document.getElementById('insightList').innerHTML=`<li>전체 공고 수는 <b>${st.latestTotal}건</b> (전월대비 ${st.totalDelta>0?'+':''}${st.totalDelta}건)입니다.</li><li>${st.compGain?`가장 채용이 많이 늘어난 기업은 <b>${st.compGain.name}</b> (+${st.compGain.delta}건)`:'데이터 부족'}입니다.</li>`; }
 
-function deltaCellHtml(e, hasHistory){
-  if(!hasHistory) return '';
-  if(e.isNew) return `<span class="delta-new">NEW</span>`;
-  if(e.delta==null) return `<span class="delta-flat">—</span>`;
-  const cls = e.delta>0?'delta-up':(e.delta<0?'delta-down':'delta-flat');
-  const sign = e.delta>0?'+':'';
-  const pctText = e.pct!=null ? ` (${e.pct>0?'+':''}${e.pct.toFixed(0)}%)` : '';
-  const arrow = e.delta>0?'▲':(e.delta<0?'▼':'');
-  return `<span class="${cls}">${arrow} ${sign}${e.delta}${pctText}</span>`;
-}
+function renderEmploymentView(){ const ents=sortEntries(entityState.employment,'count'); renderRankRows(document.getElementById('employmentRankBody'), ents, 'employment', null, false); }
+function drawDetail(k){ const p=document.getElementById(k+'Detail'); if(!selected[k]){ p.classList.remove('show'); return; } p.classList.add('show'); const e=entityState[k].find(x=>x.name===selected[k]); p.innerHTML=`<div class="dp-head"><div class="dp-title">${escapeHtml(k==='category'?categoryLabel(e.name):e.name)}</div><button class="dp-close" onclick="selectEntity('${k}','${escapeHtml(e.name).replace(/'/g,"\\'")}',false)">닫기 ✕</button></div><div class="dp-count">${e.latest}건</div>`; }
 
-function logoImgHtml(e, size){
-  if(!e.logo) return '';
-  return `<img src="${escapeHtml(e.logo)}" alt="" loading="lazy" width="${size}" height="${size}"
-    style="border-radius:6px;object-fit:contain;background:#fff;border:1px solid var(--border);vertical-align:middle;margin-right:8px;flex-shrink:0;"
-    onerror="this.style.display='none'">`;
-}
-
-function renderRankRows(tbodyEl, entries, kind, limit, navigateOnClick){
-  const hasHistory = snapshots.length>1;
-  const list = limit ? entries.slice(0,limit) : entries;
-  tbodyEl.innerHTML = list.map((e,i)=>{
-    const sel = selected[kind]===e.name;
-    const displayName = kind==='category' ? categoryLabel(e.name) : e.name;
-    return `
-      <tr class="${sel?'selected':''}" data-name="${escapeHtml(e.name)}" data-kind="${kind}">
-        <td>${i+1}</td>
-        <td class="name-cell" style="display:flex;align-items:center;min-width:0;">${logoImgHtml(e,20)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">${escapeHtml(displayName)}</span></td>
-        <td class="spark-cell">${hasHistory ? sparklineSvg(e.series) : ''}</td>
-        <td>${e.latest}</td>
-        <td>${deltaCellHtml(e, hasHistory)}</td>
-      </tr>
-    `;
-  }).join('');
-  tbodyEl.querySelectorAll('tr').forEach(tr=>{
-    if(navigateOnClick){
-      tr.onclick = ()=> goToEntityDetail(tr.dataset.kind, tr.dataset.name);
-    }else{
-      tr.onclick = ()=> selectEntity(tr.dataset.kind, tr.dataset.name);
-    }
-  });
-}
-
-function goToEntityDetail(kind, name){
-  selected[kind] = name;
-  switchView(kind);
-  renderHomeRankings();
-  if(kind==='company' || kind==='category') drawEntityTable(kind);
-  if(kind==='employment') renderEmploymentView();
-  drawDetail(kind);
-}
-
-/* ---------- 홈 랭킹 ---------- */
-function renderHomeRankings(){
-  const catEntries = sortEntries(entityState.category, 'count');
-  const compEntries = sortEntries(entityState.company, 'count');
-  renderRankRows(document.querySelector('#homeCategoryTable tbody'), catEntries, 'category', 10, true);
-  renderRankRows(document.querySelector('#homeCompanyTable tbody'), compEntries, 'company', 10, true);
-}
-
-function fmtPct(delta, prev){
-  if(prev>0) return ` (${delta>0?'+':''}${(delta/prev*100).toFixed(0)}%)`;
-  if(delta>0) return ' (신규)';
-  return '';
-}
-
-function computeMonthlyStats(snapIndex){
-  if(snapshots.length<2) return null;
-  const idx = snapIndex != null ? snapIndex : snapshots.length - 1;
-  if(idx < 1) return null;
-
-  const latest = snapshots[idx];
-  const prev = snapshots[idx - 1];
-
-  const totalDelta = latest.jobs.length - prev.jobs.length;
-
-  const groupCountsOf = (jobs)=>{
-    const c = {}; GROUP_ORDER.forEach(g=>c[g]=0);
-    jobs.forEach(j=>{
-      const groupsHit = new Set(jobCategories(j).map(x=>classifyBroadGroup(x)[0]));
-      groupsHit.forEach(g=>{ if(c[g]!=null) c[g]++; });
-    });
-    return c;
-  };
-  const curG = groupCountsOf(latest.jobs), prevG = groupCountsOf(prev.jobs);
-  const groupDeltas = GROUP_ORDER.map(g=>({g, delta:curG[g]-prevG[g], cur:curG[g], prev:prevG[g]}))
-    .filter(d=> d.cur>0 || d.prev>0);
-
-  const empCountsOf = (jobs)=>{
-    const c = {};
-    jobs.forEach(j=>{ const b = employmentBucket(j); c[b] = (c[b]||0)+1; });
-    return c;
-  };
-  const curE = empCountsOf(latest.jobs);
-  const prevE = empCountsOf(prev.jobs);
-  const empBreakdown = Object.keys(curE).map(name=>({
-    name, cur: curE[name], prev: prevE[name]||0,
-    pct: Number((curE[name]/latest.jobs.length*100).toFixed(1))
-  })).sort((a,b)=>b.cur-a.cur);
-
-  const compSorted = [...entityState.company].filter(e=>e.series[idx]!=null).sort((a,b)=>{
-    const dA = (a.series[idx] || 0) - (a.series[idx-1] || 0);
-    const dB = (b.series[idx] || 0) - (b.series[idx-1] || 0);
-    return dB - dA;
-  });
-
-  const topIncComp = compSorted[0];
-  const topDecComp = compSorted[compSorted.length-1];
-
-  return {
-    date: latest.date, prevDate: prev.date,
-    latestTotal: latest.jobs.length, prevTotal: prev.jobs.length, totalDelta,
-    groupDeltas, empBreakdown,
-    compGain: topIncComp ? { name: topIncComp.name, delta: topIncComp.series[idx] - topIncComp.series[idx-1], latest: topIncComp.series[idx] } : null,
-    compDrop: topDecComp ? { name: topDecComp.name, delta: topDecComp.series[idx] - topDecComp.series[idx-1], latest: topDecComp.series[idx] } : null,
-  };
-}
-
-function renderInsightSummary(){
-  const panel = document.getElementById('insightPanel');
-  const placeholder = document.getElementById('insightPlaceholder');
-
-  const stats = computeMonthlyStats();
-  if(!stats){
-    panel.style.display = 'none';
-    placeholder.style.display = 'block';
-    return;
-  }
-  placeholder.style.display = 'none';
-  panel.style.display = 'block';
-
-  const bullets = [];
-
-  if(stats.totalDelta > 0){
-    bullets.push(`전체 채용 공고가 지난달보다 <span class="up-text">${stats.totalDelta}건 늘어난</span> ${stats.latestTotal}건이에요.`);
-  }else if(stats.totalDelta < 0){
-    bullets.push(`전체 채용 공고가 지난달보다 <span class="down-text">${Math.abs(stats.totalDelta)}건 줄어든</span> ${stats.latestTotal}건이에요.`);
-  }else{
-    bullets.push(`전체 채용 공고 수는 지난달과 동일한 ${stats.latestTotal}건이에요.`);
-  }
-
-  const topGain = [...stats.groupDeltas].sort((a,b)=>b.delta-a.delta)[0];
-  const topDrop = [...stats.groupDeltas].sort((a,b)=>a.delta-b.delta)[0];
-
-  if(topGain && topGain.delta>0){
-    bullets.push(`${GROUP_EMOJI_MAP[topGain.g]} <b>${topGain.g}</b> 직군 채용이 가장 많이 늘었어요 — <span class="up-text">+${topGain.delta}건${fmtPct(topGain.delta, topGain.prev)}</span>, 현재 ${topGain.cur}건 채용 중.`);
-  }
-  if(topDrop && topDrop.delta<0 && topDrop.g!==(topGain && topGain.g)){
-    bullets.push(`${GROUP_EMOJI_MAP[topDrop.g]} <b>${topDrop.g}</b> 직군 채용은 가장 많이 줄었어요 — <span class="down-text">${topDrop.delta}건${fmtPct(topDrop.delta, topDrop.prev)}</span>, 현재 ${topDrop.cur}건.`);
-  }
-
-  if(stats.empBreakdown.length){
-    const top = stats.empBreakdown[0];
-    const empDelta = top.cur - top.prev;
-    const deltaText = empDelta!==0 ? ` (지난달 대비 ${empDelta>0?'+':''}${empDelta}건)` : '';
-    bullets.push(`고용형태는 <b>${top.name}</b> 비중이 ${top.pct}%로 가장 높아요 (${top.cur}건)${deltaText}.`);
-  }
-
-  if(stats.compGain && stats.compGain.delta>0){
-    bullets.push(`<b>${escapeHtml(stats.compGain.name)}</b>이(가) 채용 공고를 가장 많이 늘렸어요 — <span class="up-text">+${stats.compGain.delta}건</span>, 현재 ${stats.compGain.latest}건.`);
-  }
-  if(stats.compDrop && stats.compDrop.delta<0 && stats.compDrop.name!==(stats.compGain && stats.compGain.name)){
-    bullets.push(`<b>${escapeHtml(stats.compDrop.name)}</b>은(는) 채용 공고를 가장 많이 줄였어요 — <span class="down-text">${stats.compDrop.delta}건</span>, 현재 ${stats.compDrop.latest}건.`);
-  }
-
-  document.getElementById('insightList').innerHTML = bullets.map(b=>`<li>${b}</li>`).join('');
-}
-
-function parseAiReportToHtml(markdownText) {
-  const sections = markdownText.split(/(?=\n###? )/g);
-  let html = '';
-
-  sections.forEach(sec => {
-    const trimmed = sec.trim();
-    if (!trimmed) return;
-
-    let lines = trimmed.split('\n');
-    let title = '';
-    let bodyLines = [];
-
-    if (lines[0].startsWith('#')) {
-      title = lines[0].replace(/^#+\s*/, '');
-      bodyLines = lines.slice(1);
-    } else {
-      bodyLines = lines;
-    }
-
-    let bodyHtml = bodyLines.join('\n')
-      .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-      .replace(/^\s*[\-\*]\s+(.*)$/gim, '<li>$1</li>')
-      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-      .replace(/\n\n/g, '<br>');
-
-    if (title) {
-      html += `
-        <div class="ai-section-card">
-          <div class="ai-section-title">${escapeHtml(title)}</div>
-          <div class="ai-section-body">${bodyHtml}</div>
-        </div>
-      `;
-    } else {
-      html += `<div class="ai-section-body" style="padding: 6px 0;">${bodyHtml}</div>`;
-    }
-  });
-
-  return html;
-}
-
-/* ---------- 월별 리포트 탭 & 팝업 모달 ---------- */
 function renderReportView(){
-  const container = document.getElementById('reportListContainer');
-  if(snapshots.length < 2){
-    container.innerHTML = '<div class="placeholder-hint">스냅샷이 2개 이상 쌓이면(다음 달부터) 월별 리포트 보관함이 자동으로 활성화돼요.</div>';
-    return;
-  }
-
-  let itemsHtml = '<div class="report-card-list">';
-  for(let i = snapshots.length - 1; i >= 1; i--){
-    const cur = snapshots[i];
-    const prev = snapshots[i-1];
-    const dateParts = cur.date.split('-');
-    const yearMonth = `${dateParts[0]}년 ${parseInt(dateParts[1])}월`;
-
-    itemsHtml += `
-      <div class="report-item-card" onclick="openReportModal(${i})">
-        <div>
-          <div class="report-item-title">📄 ${yearMonth} 게임 채용 트렌드 리포트</div>
-          <div class="report-item-sub">수집 기준일: ${cur.date} (전월: ${prev.date}) · 총 ${cur.jobs.length}건 공고</div>
-        </div>
-        <div class="report-badge">리포트 열기 ↗</div>
-      </div>
-    `;
-  }
-  itemsHtml += '</div>';
-  container.innerHTML = itemsHtml;
+  const c=document.getElementById('reportListContainer'); if(snapshots.length<2){ c.innerHTML='<div class="placeholder-hint">다음 달부터 리포트 보관함이 활성화돼요.</div>'; return; }
+  c.innerHTML = '<div class="report-card-list">' + snapshots.slice(1).map((cur, i)=>{ const d=cur.date.split('-'); return `<div class="report-item-card" onclick="openReportModal(${i+1})"><div><div class="report-item-title">📄 ${d[0]}년 ${parseInt(d[1])}월 채용 트렌드 리포트</div><div class="report-item-sub">기준일: ${cur.date} · ${cur.jobs.length}건</div></div><div class="report-badge">열기 ↗</div></div>`; }).reverse().join('') + '</div>';
 }
 
-async function openReportModal(snapIndex){
-  const modal = document.getElementById('reportModal');
-  const titleEl = document.getElementById('modalTitle');
-  const bodyEl = document.getElementById('modalBody');
-
-  const cur = snapshots[snapIndex];
-  const prev = snapshots[snapIndex-1];
-  const stats = computeMonthlyStats(snapIndex);
-
-  const reportTitle = `${cur.date} 월간 게임 채용 분석 리포트 (${prev.date} 대비)`;
-  titleEl.textContent = reportTitle;
-  modal.classList.add('active');
-
-  currentReportData = { date: cur.date, title: reportTitle, text: '', snapIndex: snapIndex };
-
-  // 1. 저장된 마크다운 리포트 파일 요청
-  try {
-    const reportRes = await fetch(`data/reports/${cur.date}_ai_analysis.md`, {cache:'no-store'});
-    if(reportRes.ok){
-      const mdText = await reportRes.text();
-      currentReportData.text = `# ${reportTitle}\n\n` + mdText;
-      bodyEl.innerHTML = parseAiReportToHtml(mdText);
-      return;
-    }
-  } catch(e) {}
-
-  // 2. 파일이 없거나 수동 생성 희망 시: 브라우저에서 Gemini API 직접 생성 버튼 표시
-  let fallbackHtml = `
-    <div class="manual-generate-box">
-      <div class="manual-generate-text">💡 깃허브에 저장된 AI 분석 파일이 없습니다.<br>아래 버튼을 눌러 브라우저에서 즉시 Gemini AI 딥 분석을 실행해보세요.</div>
-      <button class="manual-generate-btn" onclick="triggerBrowserGeminiAnalysis(${snapIndex})">🤖 AI 딥 분석 수동 생성</button>
-    </div>
-  `;
-
-  if(stats){
-    fallbackHtml += `
-      <div class="ai-section-card">
-        <div class="ai-section-title">📊 기본 채용 공고 요약</div>
-        <div class="ai-section-body">
-          <ul>
-            <li>전체 채용 공고: <b>${stats.latestTotal}건</b> (전월 대비 <b>${stats.totalDelta>=0?'+':''}${stats.totalDelta}건</b>)</li>
-            ${stats.compGain ? `<li>가장 공고가 많이 늘어난 기업: <b>${escapeHtml(stats.compGain.name)}</b> (+${stats.compGain.delta}건)</li>` : ''}
-            ${stats.compDrop ? `<li>가장 공고가 많이 줄어든 기업: <b>${escapeHtml(stats.compDrop.name)}</b> (${stats.compDrop.delta}건)</li>` : ''}
-          </ul>
-        </div>
-      </div>
-      <div class="ai-section-card">
-        <div class="ai-section-title">💡 주요 직군 증감 현황</div>
-        <div class="ai-section-body">
-          <ul>
-            ${stats.groupDeltas.map(d=>`<li><b>${d.g}</b>: ${d.cur}건 (전월 대비 ${d.delta>=0?'+':''}${d.delta}건)</li>`).join('')}
-          </ul>
-        </div>
-      </div>
-    `;
-  }
-  bodyEl.innerHTML = fallbackHtml;
+async function openReportModal(idx){
+  document.getElementById('reportModal').classList.add('active'); const body=document.getElementById('modalBody'); const cur=snapshots[idx], st=computeStats(idx);
+  currentReportData = { date: cur.date, title: `${cur.date} 월간 AI 채용 분석 리포트`, text: '', snapIndex: idx };
+  document.getElementById('modalTitle').textContent = currentReportData.title;
+  try{ const r=await fetch(`data/reports/${cur.date}_ai_analysis.md`,{cache:'no-store'}); if(r.ok){ const t=await r.text(); currentReportData.text=t; body.innerHTML=parseMd(t); return; } }catch(e){}
+  body.innerHTML=`<div class="manual-generate-box"><div><div class="manual-generate-text">💡 깃허브 서버의 AI 리포트 파일이 아직 없습니다.<br>브라우저에서 직접 최신 Gemini 3.5 모델로 딥 분석을 실행해 보세요.</div></div><button class="manual-generate-btn" onclick="triggerBrowserGeminiAnalysis(${idx})">🤖 AI 딥 분석 직접 생성</button></div>`;
 }
 
-/* 수동 브라우저 Gemini API 리포트 생성 함수 */
-async function triggerBrowserGeminiAnalysis(snapIndex){
+function parseMd(t){ return t.split(/(?=\n###? )/g).map(s=>{ const b=s.trim().split('\n'), ti=b[0].startsWith('#')?b.shift().replace(/^#+\s*/,''):''; const bh=b.join('<br>').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/^\s*[\-\*]\s+(.*)$/gim,'<li>$1</li>').replace(/(<li>.*<\/li>)/s,'<ul>$1</ul>'); return ti?`<div class="ai-section-card"><div class="ai-section-title">${escapeHtml(ti)}</div><div class="ai-section-body">${bh}</div></div>`:`<div class="ai-section-body">${bh}</div>`; }).join(''); }
+
+async function triggerBrowserGeminiAnalysis(idx){
   let key = localStorage.getItem('gemini_api_key');
+  if(!key || key.length<10){ key = window.prompt('AQ. (또는 AIza)로 시작하는 Gemini API 키를 입력하세요.\n(브라우저 내부에만 안전하게 저장됩니다)'); if(key){ key=key.trim(); localStorage.setItem('gemini_api_key', key); } }
+  if(!key) return; const body=document.getElementById('modalBody'), st=computeStats(idx);
+  body.innerHTML = '<div class="placeholder-hint">🔍 <b>Gemini 3.5 Flash</b> 최신 모델이 구글 검색과 함께 실시간 분석 중입니다... (10~20초 소요)</div>';
+  const p = `게임 산업 전문 수석 애널리스트로서 아래 데이터를 바탕으로 심층 리포트를 작성해줘.\n[데이터 기준: ${st.date}]\n- 전체 공고: ${st.latestTotal}건 (전월대비 ${st.totalDelta>=0?'+':''}${st.totalDelta})\n\n가이드: 1. 시장 거시 동향 2. 주요 기업 딥다이브 3. 시사점 (키워드는 **볼드체** 강조)`;
   
-  if(!key || key.length < 10){
-    key = window.prompt('Gemini API 키를 입력하세요 (aistudio.google.com 발급).\n브라우저에 저장됩니다.');
-    if(key) {
-      key = key.trim();
-      localStorage.setItem('gemini_api_key', key);
-    }
-  }
-  if(!key) return;
-
-  const stats = computeMonthlyStats(snapIndex);
-  const curSnap = snapshots[snapIndex];
-  const bodyEl = document.getElementById('modalBody');
-
-  bodyEl.innerHTML = '<div class="placeholder-hint">🔍 <b>Gemini AI</b>가 실시간 분석하고 있습니다... (약 10~15초 소요)</div>';
-
-  const incComp = stats.compGain ? stats.compGain.name : '없음';
-  const dropComp = stats.compDrop ? stats.compDrop.name : '없음';
-
-  // 실제 공고 타이틀 추출
-  const incTitles = curSnap.jobs.filter(j => j.company_name === incComp).map(j => j.title).slice(0, 10);
-  const incTitlesStr = incTitles.map(t => `  * ${t}`).join('\n') || '  (공고 없음)';
-
-  const prompt = `너는 게임 산업 전문 수석 애널리스트(Senior Industry Analyst)야.
-아래 실시간 수집 데이터와 네 Google Search 기능(실시간 뉴스, 신작 발표, 업계 이슈)을 결합하여 심층 리포트를 작성해줘.
-
-[데이터 기준: ${stats.date} (전월: ${stats.prevDate})]
-- 전체 공고 수: 이번달 ${stats.latestTotal}건 (전월 대비 ${stats.totalDelta>=0?'+':''}${stats.totalDelta}건)
-
-[공고 증가 1위 기업: ${incComp} (+${stats.compGain ? stats.compGain.delta : 0}건)]
-- 실제 등록 공고 제목:
-${incTitlesStr}
-
-[공고 감소 1위 기업: ${dropComp} (${stats.compDrop ? stats.compDrop.delta : 0}건)]
-
-[작성 요구사항]
-### 📊 1. 게임 시장 거시 동향 & 직군별 수요 원인 분석
-### 📰 2. 주요 기업 변동 원인 & 프로젝트 딥다이브
-### 💡 3. 채용 시장 시사점 & 기술 스택 전망
-
-위 3개 섹션 구조로 구체적인 신작 프로젝트명, 기술 스택, 업계 뉴스 원인을 밝혀서 작성해줘. 핵심 키워드는 **볼드체**로 강조해줘.`;
-
   try {
-    // 🔥 반드시 1.5-flash 모델을 호출하도록 고정 🔥
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
-    console.log("호출 주소:", endpoint); // 개발자 도구 디버깅용
-
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        tools: [{ googleSearch: {} }]
-      })
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({ contents: [{ parts: [{ text: p }] }], tools: [{ googleSearch: {} }] })
     });
-
     if(!res.ok){
-      localStorage.removeItem('gemini_api_key');
-      bodyEl.innerHTML = `
-        <div class="placeholder-hint" style="color:var(--up);">
-          ⚠️ API 호출 실패 (${res.status}): 저장된 API 키가 올바르지 않거나 권한이 없습니다.<br>
-          <button class="manual-generate-btn" style="margin-top:10px;" onclick="triggerBrowserGeminiAnalysis(${snapIndex})">🔑 API 키 재입력 후 다시 시도</button>
-        </div>`;
-      return;
+      const eTxt = await res.text(); let eMsg = res.statusText; try{ eMsg = JSON.parse(eTxt).error.message || eMsg; }catch(e){}
+      body.innerHTML = `<div class="placeholder-hint" style="color:var(--up);">⚠️ API 호출 실패 (${res.status})<br><span style="font-size:12px;color:#4e5968;">${escapeHtml(eMsg)}</span><br><br><button class="manual-generate-btn" onclick="localStorage.removeItem('gemini_api_key');triggerBrowserGeminiAnalysis(${idx})">🔑 API 키 재입력</button></div>`; return;
     }
-
-    const data = await res.json();
-    const candidate = data.candidates && data.candidates[0];
-    const text = candidate?.content?.parts?.map(p => p.text).join('\n').trim();
-
-    if(text){
-      currentReportData.text = `# ${currentReportData.title}\n\n` + text;
-      bodyEl.innerHTML = parseAiReportToHtml(text);
-    } else {
-      bodyEl.innerHTML = '<div class="placeholder-hint">응답 데이터를 생성하지 못했습니다.</div>';
-    }
-  } catch(err) {
-    bodyEl.innerHTML = '<div class="placeholder-hint">네트워크 오류: ' + err.message + '</div>';
-  }
+    const txt = (await res.json()).candidates?.[0]?.content?.parts?.map(x=>x.text).join('\n').trim();
+    if(txt){ currentReportData.text = txt; body.innerHTML = parseMd(txt); } else body.innerHTML = '<div class="placeholder-hint">결과가 없습니다.</div>';
+  } catch(e) { body.innerHTML = `<div class="placeholder-hint">네트워크 오류: ${e.message}</div>`; }
 }
 
-function closeReportModal(){
-  document.getElementById('reportModal').classList.remove('active');
-}
-
-/* 리포트 다운로드 (.md 파일 저장) */
-function downloadReport(){
-  if(!currentReportData.text){
-    alert('다운로드할 리포트 내용이 없습니다.');
-    return;
-  }
-  const blob = new Blob([currentReportData.text], { type: 'text/markdown;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${currentReportData.date}_게임채용_리포트.md`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-/* 리포트 공유하기 */
-function shareReport(){
-  const shareTitle = currentReportData.title || '게임잡 채용 트래커 월간 리포트';
-  const shareUrl = window.location.href;
-
-  if (navigator.share) {
-    navigator.share({
-      title: shareTitle,
-      text: `${shareTitle}\n\n게임 업계 최신 채용 데이터와 뉴스 분석 리포트를 확인해 보세요!`,
-      url: shareUrl
-    }).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(shareUrl).then(() => {
-      alert('대시보드 링크(URL)가 클립보드에 복사되었습니다!');
-    }).catch(() => {
-      alert('주소 복사에 실패했습니다.');
-    });
-  }
-}
-
-document.getElementById('reportModal').addEventListener('click', (e)=>{
-  if(e.target === document.getElementById('reportModal')){
-    closeReportModal();
-  }
-});
-
-/* ---------- 기업별/공고별 탭 ---------- */
-function setupEntityView(kind){
-  const searchEl = document.getElementById(kind+'Search');
-  searchEl.oninput = ()=> drawEntityTable(kind);
-
-  document.querySelectorAll(`.sort-chips[data-kind="${kind}"] .chip`).forEach(chip=>{
-    chip.onclick = ()=>{
-      document.querySelectorAll(`.sort-chips[data-kind="${kind}"] .chip`).forEach(c=>c.classList.remove('active'));
-      chip.classList.add('active');
-      sortStateByKind[kind] = chip.dataset.sort;
-      drawEntityTable(kind);
-    };
-  });
-
-  drawEntityTable(kind);
-}
-
-function drawEntityTable(kind){
-  const q = document.getElementById(kind+'Search').value.trim().toLowerCase();
-  let entries = entityState[kind].filter(e=> e.name.toLowerCase().includes(q));
-  entries = sortEntries(entries, sortStateByKind[kind]);
-  const tbody = document.getElementById(kind+'RankBody');
-  renderRankRows(tbody, entries, kind, null);
-  document.getElementById(kind+'RowCount').textContent = `${entries.length}개`;
-}
-
-/* ---------- 고용형태 탭 ---------- */
-const EMPLOYMENT_COLORS = {'정규직':'#3182f6','계약직':'#f59e0b','인턴직':'#10b981','파견직':'#8b5cf6','기타':'#64748b'};
-
-function renderEmploymentView(){
-  const entries = sortEntries(entityState.employment, 'count');
-  renderRankRows(document.getElementById('employmentRankBody'), entries, 'employment', null);
-  renderEmploymentDonut(entries);
-}
-
-function renderEmploymentDonut(entries){
-  const total = entries.reduce((sum,e)=> sum+e.latest, 0);
-  if(!total) return;
-
-  destroyChart('employmentDonut');
-  charts.employmentDonut = new Chart(document.getElementById('employmentDonutCanvas'), {
-    type:'doughnut',
-    data:{
-      labels: entries.map(e=>e.name),
-      datasets:[{
-        data: entries.map(e=>e.latest),
-        backgroundColor: entries.map(e=> EMPLOYMENT_COLORS[e.name] || '#c7ccd3'),
-        borderWidth:2, borderColor:'#ffffff'
-      }]
-    },
-    options:{ cutout:'68%', plugins:{legend:{display:false}} }
-  });
-
-  document.getElementById('employmentDonutLegend').innerHTML = entries.map(e=>{
-    const pct = (e.latest/total*100).toFixed(0);
-    const color = EMPLOYMENT_COLORS[e.name] || '#c7ccd3';
-    return `
-      <div class="donut-legend-row">
-        <span><span class="donut-dot" style="background:${color};"></span>${escapeHtml(e.name)}</span>
-        <span>${e.latest}건 · ${pct}%</span>
-      </div>
-    `;
-  }).join('');
-}
-
-/* ---------- 상세 패널 ---------- */
-function groupCounts(jobs, getKeys){
-  const counts = {};
-  jobs.forEach(j=> getKeys(j).forEach(k=>{ if(k) counts[k]=(counts[k]||0)+1; }));
-  return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-}
-
-function podiumHtml(sortedEntries){
-  const top3 = sortedEntries.slice(0,3);
-  if(!top3.length) return '<div class="placeholder-hint">데이터 없음</div>';
-  const medal = ['🥇','🥈','🥉'];
-  const displayOrder = [1,0,2].filter(i=> top3[i]);
-  return `
-    <div class="podium">
-      ${displayOrder.map(i=>{
-        const [name, count] = top3[i];
-        return `
-          <div class="podium-item ${i===0?'first':''}">
-            <div class="podium-medal">${medal[i]}</div>
-            <div class="podium-name">${escapeHtml(name)}</div>
-            <div class="podium-count">${count}건</div>
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
-}
-
-const GROUP_ORDER = ['개발','아트','기획','QA','사업','지원부서'];
-const GROUP_COLORS = {
-  '개발':'#3182f6', '아트':'#f59e0b', '기획':'#10b981',
-  'QA':'#8b5cf6', '사업':'#f04452', '지원부서':'#64748b'
-};
-const GROUP_EMOJI_MAP = {'개발':'💻','아트':'🎨','기획':'📋','QA':'🧪','사업':'📈','지원부서':'🗂️'};
-
-function buildCompanyGroupSeries(companyName){
-  const result = {};
-  GROUP_ORDER.forEach(g=> result[g] = []);
-  snapshots.forEach(snap=>{
-    const counts = {}; GROUP_ORDER.forEach(g=> counts[g]=0);
-    snap.jobs.forEach(j=>{
-      if(j.company_name !== companyName) return;
-      const groupsHit = new Set(jobCategories(j).map(c=> classifyBroadGroup(c)[0]));
-      groupsHit.forEach(g=>{ if(counts[g]!=null) counts[g]++; });
-    });
-    GROUP_ORDER.forEach(g=> result[g].push(counts[g]));
-  });
-  return result;
-}
-
-function selectEntity(kind, name){
-  selected[kind] = (selected[kind]===name) ? null : name;
-  renderHomeRankings();
-  if(kind==='company') drawEntityTable('company');
-  if(kind==='category') drawEntityTable('category');
-  if(kind==='employment') renderEmploymentView();
-  drawDetail(kind);
-}
-
-function drawDetail(kind){
-  const panel = document.getElementById(kind+'Detail');
-  const name = selected[kind];
-  const chartKey = kind+'Detail';
-
-  if(kind==='company'){
-    const listSection = document.getElementById('companyListSection');
-    if(!name){
-      panel.classList.remove('show');
-      listSection.style.display = 'block';
-      destroyChart(chartKey); destroyChart(chartKey+'Group');
-      return;
-    }
-    listSection.style.display = 'none';
-    panel.classList.add('show');
-    const entry = entityState.company.find(e=>e.name===name);
-    const latestSnap = snapshots[snapshots.length-1];
-    const jobsHere = latestSnap.jobs.filter(j=> KEY_FNS.company(j).includes(name));
-    drawCompanyDetail(panel, name, entry, jobsHere, chartKey);
-    return;
-  }
-
-  if(!name){ panel.classList.remove('show'); destroyChart(chartKey); destroyChart(chartKey+'Group'); return; }
-  panel.classList.add('show');
-
-  const entry = entityState[kind].find(e=>e.name===name);
-  const latestSnap = snapshots[snapshots.length-1];
-  const jobsHere = latestSnap.jobs.filter(j=> KEY_FNS[kind](j).includes(name));
-
-  let breakdownHtml = '';
-  if(kind==='category'){
-    const byComp = groupCounts(jobsHere, j=>[j.company_name]);
-    breakdownHtml = `
-      <div class="stock-section">
-        <h3>이 직무를 채용 중인 회사 TOP 3</h3>
-        ${podiumHtml(byComp)}
-      </div>`;
-  } else if(kind==='employment'){
-    const byComp = groupCounts(jobsHere, j=>[j.company_name]).slice(0,8);
-    const byCat = groupCounts(jobsHere, jobCategories).slice(0,8);
-    breakdownHtml = `
-      <div class="breakdown-lists">
-        <div class="bd-block"><h4>회사별</h4>
-          ${byComp.map(([n,c])=>`<div class="bd-row"><span>${escapeHtml(n)}</span><span>${c}건</span></div>`).join('') || '<div class="placeholder-hint">데이터 없음</div>'}
-        </div>
-        <div class="bd-block"><h4>직무별</h4>
-          ${byCat.map(([n,c])=>`<div class="bd-row"><span>${escapeHtml(categoryLabel(n))}</span><span>${c}건</span></div>`).join('') || '<div class="placeholder-hint">데이터 없음</div>'}
-        </div>
-      </div>`;
-  }
-
-  const titleText = kind==='category' ? categoryLabel(name) : name;
-
-  panel.innerHTML = `
-    <div class="dp-head">
-      <div class="dp-title" style="display:flex;align-items:center;">${kind==='company' ? logoImgHtml(entry,28) : ''}<span>${escapeHtml(titleText)}</span></div>
-      <button class="dp-close" onclick="selectEntity('${kind}', '${name.replace(/'/g, "\\'")}')">닫기 ✕</button>
-    </div>
-    <div class="dp-count">${entry.latest}건</div>
-    <div class="dp-sub">${entry.delta!=null ? `전월대비 ${entry.delta>0?'+':''}${entry.delta}건${entry.pct!=null?` (${entry.pct>0?'+':''}${entry.pct.toFixed(0)}%)`:''}` : '이전 스냅샷 없음'}</div>
-    ${snapshots.length>1 ? `<canvas id="${chartKey}Canvas" height="60"></canvas>` : ''}
-    ${breakdownHtml}
-    <div class="detail-jobs">
-      <h4 style="font-size:12px;color:var(--muted);font-weight:700;margin:14px 0 8px;">현재 등록된 공고 (${jobsHere.length}건)</h4>
-      ${jobsHere.slice(0,20).map(j=>`
-        <div class="dj-row">
-          <div class="dj-title">${escapeHtml(j.title)} · ${escapeHtml(j.company_name)}</div>
-          <div class="dj-meta">${escapeHtml(j.deadline_raw)}</div>
-        </div>
-      `).join('') || '<div class="placeholder-hint">공고가 없어요</div>'}
-      ${jobsHere.length>20 ? `<div class="placeholder-hint">외 ${jobsHere.length-20}건 더 있음</div>` : ''}
-    </div>
-  `;
-
-  if(snapshots.length>1){
-    destroyChart(chartKey);
-    charts[chartKey] = new Chart(document.getElementById(chartKey+'Canvas'), {
-      type:'line',
-      data:{ labels: snapshots.map(s=>s.date), datasets:[{
-        data: entry.series, borderColor:'#3182f6', backgroundColor:'rgba(49,130,246,0.08)',
-        fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:'#3182f6'
-      }]},
-      options:{ plugins:{legend:{display:false}},
-        scales:{ x:{ticks:{color:'#8b95a1'},grid:{display:false}}, y:{ticks:{color:'#8b95a1'},grid:{color:'#eaebee'},beginAtZero:true} } }
-    });
-  }
-}
-
-function companyKeyInfoGrid(entry){
-  const items = [
-    ['공고 수', entry.latest + '건'],
-    ['전월대비', entry.delta!=null ? `${entry.delta>0?'+':''}${entry.delta}건${entry.pct!=null?` (${entry.pct>0?'+':''}${entry.pct.toFixed(0)}%)`:''}` : '—'],
-    ['대표자명', entry.ceo],
-    ['설립연도', entry.foundedYear],
-  ].filter(([, v]) => v);
-
-  if(entry.flagshipGames){
-    items.push(['대표게임', entry.flagshipGames]);
-  }
-
-  if(!items.length) return '';
-
-  return `
-    <div class="info-grid">
-      ${items.map(([label, val])=>`
-        <div class="info-item${label==='대표게임' ? ' info-item-wide' : ''}">
-          <div class="info-label">${escapeHtml(label)}</div>
-          <div class="info-value">${escapeHtml(val)}</div>
-        </div>
-      `).join('')}
-    </div>
-  `;
-}
-
-function companyDonutSectionHtml(jobsHere, chartKey){
-  if(!jobsHere.length){
-    return '<div class="placeholder-hint">현재 등록된 공고가 없어요</div>';
-  }
-  return `
-    <div class="donut-section">
-      <div class="donut-canvas-wrap"><canvas id="${chartKey}DonutCanvas"></canvas></div>
-      <div class="donut-legend" id="${chartKey}DonutLegend"></div>
-    </div>
-  `;
-}
-
-function drawCompanyDetail(panel, name, entry, jobsHere, chartKey){
-  const byCat = groupCounts(jobsHere, jobCategories).slice(0,10);
-  const hasHistory = snapshots.length>1;
-
-  panel.innerHTML = `
-    <div class="dp-head">
-      <button class="dp-back" onclick="selectEntity('company', '${name.replace(/'/g, "\\'")}')">← 기업 목록으로</button>
-      ${entry.homepage ? `<a class="dp-homepage-btn" href="${escapeHtml(entry.homepage)}" target="_blank" rel="noopener">홈페이지 ↗</a>` : ''}
-    </div>
-    <div class="dp-head" style="margin-top:10px;">
-      <div class="dp-title" style="display:flex;align-items:center;">${logoImgHtml(entry,32)}<span>${escapeHtml(name)}</span></div>
-    </div>
-
-    ${companyKeyInfoGrid(entry)}
-
-    <div class="stock-section">
-      <h3>직무 구성</h3>
-      ${companyDonutSectionHtml(jobsHere, chartKey)}
-    </div>
-
-    <div class="stock-section">
-      <h3>세부 직종별 공고</h3>
-      <div class="bd-block">
-        ${byCat.map(([n,c])=>`<div class="bd-row"><span>${escapeHtml(categoryLabel(n))}</span><span>${c}건</span></div>`).join('') || '<div class="placeholder-hint">데이터 없음</div>'}
-      </div>
-    </div>
-
-    <div class="stock-section">
-      <h3>채용 추이</h3>
-      ${hasHistory ? `
-        <div style="margin-bottom:20px;">
-          <div class="chart-subtitle">전체 공고 수</div>
-          <canvas id="${chartKey}Canvas" height="70"></canvas>
-        </div>
-        <div>
-          <div class="chart-subtitle">직무 그룹별</div>
-          <canvas id="${chartKey}GroupCanvas" height="90"></canvas>
-        </div>
-      ` : '<div class="placeholder-hint">여러 달 데이터가 있어야 추이를 볼 수 있어요</div>'}
-    </div>
-
-    <div class="stock-section">
-      <h3>현재 등록된 공고 (${jobsHere.length}건)</h3>
-      <div class="detail-jobs">
-        ${jobsHere.slice(0,30).map(j=>`
-          <div class="dj-row">
-            <div class="dj-title">${escapeHtml(j.title)}</div>
-            <div class="dj-meta">${escapeHtml(j.deadline_raw)}</div>
-          </div>
-        `).join('') || '<div class="placeholder-hint">공고가 없어요</div>'}
-        ${jobsHere.length>30 ? `<div class="placeholder-hint">외 ${jobsHere.length-30}건 더 있음</div>` : ''}
-      </div>
-    </div>
-  `;
-
-  destroyChart(chartKey);
-  destroyChart(chartKey+'Group');
-  destroyChart(chartKey+'Donut');
-
-  if(jobsHere.length){
-    const donutCounts = {}; GROUP_ORDER.forEach(g=> donutCounts[g]=0);
-    jobsHere.forEach(j=>{
-      const cats = jobCategories(j);
-      const primary = cats.length ? cats[0] : '기타/미분류';
-      const [group] = classifyBroadGroup(primary);
-      donutCounts[group] = (donutCounts[group]||0)+1;
-    });
-    const activeGroups = GROUP_ORDER.filter(g=> donutCounts[g]>0);
-    const total = jobsHere.length;
-
-    charts[chartKey+'Donut'] = new Chart(document.getElementById(chartKey+'DonutCanvas'), {
-      type:'doughnut',
-      data:{
-        labels: activeGroups.map(g=>`${GROUP_EMOJI_MAP[g]} ${g}`),
-        datasets:[{
-          data: activeGroups.map(g=>donutCounts[g]),
-          backgroundColor: activeGroups.map(g=>GROUP_COLORS[g]),
-          borderWidth:2, borderColor:'#ffffff'
-        }]
-      },
-      options:{ cutout:'68%', plugins:{legend:{display:false}} }
-    });
-
-    document.getElementById(chartKey+'DonutLegend').innerHTML = activeGroups.map(g=>{
-      const pct = (donutCounts[g]/total*100).toFixed(0);
-      return `
-        <div class="donut-legend-row">
-          <span><span class="donut-dot" style="background:${GROUP_COLORS[g]};"></span>${GROUP_EMOJI_MAP[g]} ${g}</span>
-          <span>${donutCounts[g]}건 · ${pct}%</span>
-        </div>
-      `;
-    }).join('');
-  }
-
-  if(hasHistory){
-    charts[chartKey] = new Chart(document.getElementById(chartKey+'Canvas'), {
-      type:'line',
-      data:{ labels: snapshots.map(s=>s.date), datasets:[{
-        data: entry.series, borderColor:'#3182f6', backgroundColor:'rgba(49,130,246,0.08)',
-        fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:'#3182f6'
-      }]},
-      options:{ plugins:{legend:{display:false}},
-        scales:{ x:{ticks:{color:'#8b95a1'},grid:{display:false}}, y:{ticks:{color:'#8b95a1'},grid:{color:'#eaebee'},beginAtZero:true} } }
-    });
-
-    const groupSeries = buildCompanyGroupSeries(name);
-    charts[chartKey+'Group'] = new Chart(document.getElementById(chartKey+'GroupCanvas'), {
-      type:'line',
-      data:{
-        labels: snapshots.map(s=>s.date),
-        datasets: GROUP_ORDER.map(g=>({
-          label: `${GROUP_EMOJI_MAP[g]} ${g}`,
-          data: groupSeries[g],
-          borderColor: GROUP_COLORS[g],
-          backgroundColor: GROUP_COLORS[g],
-          tension:0.3, pointRadius:2, borderWidth:2
-        }))
-      },
-      options:{
-        plugins:{legend:{position:'bottom', labels:{color:'#191f28', boxWidth:10, font:{size:11}}}},
-        scales:{
-          x:{ticks:{color:'#8b95a1'},grid:{display:false}},
-          y:{ticks:{color:'#8b95a1', stepSize:1},grid:{color:'#eaebee'},beginAtZero:true}
-        }
-      }
-    });
-  }
-}
+function closeReportModal(){ document.getElementById('reportModal').classList.remove('active'); }
+function downloadReport(){ if(!currentReportData.text) return alert('내용이 없습니다.'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([currentReportData.text],{type:'text/markdown'})); a.download=`${currentReportData.date}_리포트.md`; a.click(); }
+function shareReport(){ navigator.clipboard.writeText(window.location.href).then(()=>alert('복사되었습니다.')); }
 </script>
 </body>
 </html>
