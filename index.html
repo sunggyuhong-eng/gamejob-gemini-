@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>게임잡 채용 트래커</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --bg:#ffffff;
+    --surface:#f7f8fa;
+    --surface-2:#f2f3f5;
+    --border:#eaebee;
+    --text:#191f28;
+    --muted:#8b95a1;
+    --blue:#3182f6;
+    --blue-soft:#eef4ff;
+    --up:#f04452;
+    --up-soft:#fef0f1;
+    --down:#3182f6;
+    --down-soft:#eef4ff;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+    line-height:1.5;
+    font-size:14.5px;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:24px 20px 100px;}
+
+  header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:20px;}
+  header h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-0.01em;}
+  .header-logo{height:26px;width:auto;object-fit:cover;object-position:center;vertical-align:middle;}
+  .header-title{display:flex;align-items:center;gap:10px;}
+  header p{margin:2px 0 0;color:var(--muted);font-size:12.5px;}
+
+  .upload-btn{
+    position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:6px;
+    background:var(--blue);color:#fff;border:none;border-radius:10px;
+    padding:9px 15px;font-size:12.5px;font-weight:600;cursor:pointer;
+  }
+  .upload-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+
+  .empty{text-align:center;padding:120px 20px;color:var(--muted);}
+  .empty strong{color:var(--text);display:block;font-size:17px;margin-bottom:8px;font-weight:700;}
+
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:18px;}
+  .stat-card{background:var(--surface);border-radius:12px;padding:14px 16px;}
+  .stat-card .label{color:var(--muted);font-size:12px;font-weight:500;margin-bottom:4px;}
+  .stat-card .num{font-size:21px;font-weight:700;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;}
+  .stat-card .num.up{color:var(--up);}
+  .stat-card .num.down{color:var(--down);}
+  @media (max-width:640px){.stat-row{grid-template-columns:1fr;}}
+
+  /* 상단 탭 (토스 메뉴바 느낌) */
+  .nav-tabs{display:flex;gap:22px;border-bottom:1px solid var(--border);margin-bottom:18px;}
+  .nav-tab{
+    background:none;border:none;padding:11px 0;font-size:15px;font-weight:700;
+    color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;
+  }
+  .nav-tab.active{color:var(--text);border-bottom-color:var(--text);}
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .panel{background:var(--surface);border-radius:14px;padding:16px 18px;margin-bottom:16px;}
+  .panel-title{font-size:13.5px;font-weight:700;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;}
+  .panel-title .see-all{font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media (max-width:760px){.grid-2{grid-template-columns:1fr;}}
+  canvas{max-width:100%;}
+
+  .search-input{
+    width:100%;padding:10px 13px;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;color:var(--text);font-size:13.5px;margin-bottom:10px;
+  }
+  .search-input:focus{outline:1px solid var(--blue);}
+
+  .sort-chips{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+  .chip{background:var(--surface-2);border:none;border-radius:999px;padding:6px 12px;
+    font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;}
+  .chip.active{background:var(--text);color:#fff;}
+
+  /* 랭킹 테이블 */
+  table.rank{width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed;}
+  table.rank th{
+    text-align:right;color:var(--muted);font-weight:600;font-size:11px;
+    padding:6px 8px;border-bottom:1px solid var(--border);
+  }
+  table.rank th:first-child, table.rank th:nth-child(2){text-align:left;}
+  table.rank td{padding:10px 8px;border-bottom:1px solid var(--border);text-align:right;vertical-align:middle;overflow:hidden;}
+  table.rank th:nth-child(1), table.rank td:nth-child(1){width:30px;text-align:center;color:var(--muted);font-size:12px;}
+  table.rank th:nth-child(2), table.rank td:nth-child(2){width:auto;}
+  table.rank th:nth-child(3), table.rank td:nth-child(3){width:70px;}
+  table.rank th:nth-child(4), table.rank td:nth-child(4){width:56px;}
+  table.rank th:nth-child(5), table.rank td:nth-child(5){width:120px;}
+  table.rank td.name-cell{text-align:left;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;}
+  table.rank tbody tr{cursor:pointer;}
+  table.rank tbody tr:hover{background:#fff;}
+  table.rank tbody tr.selected{background:var(--blue-soft);}
+  .spark-cell svg{display:block;margin-left:auto;}
+  .delta-up{color:var(--up);font-weight:700;}
+  .delta-down{color:var(--down);font-weight:700;}
+  .delta-flat{color:#b0b8c1;}
+  .delta-new{color:var(--up);font-weight:700;font-size:11.5px;}
+  .row-count{color:var(--muted);font-size:11.5px;margin-top:8px;}
+
+  /* 상세 패널 */
+  .detail-panel{background:var(--surface);border-radius:14px;padding:18px;margin-bottom:16px;display:none;}
+  .detail-panel.show{display:block;}
+  .dp-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;}
+  .dp-title{font-size:17px;font-weight:700;}
+  .dp-count{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .dp-sub{font-size:12.5px;color:var(--muted);margin-bottom:14px;}
+  .dp-close{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;font-weight:600;}
+  .dp-back{background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;font-weight:700;padding:0;}
+  .dp-back:hover{text-decoration:underline;}
+  .breakdown-lists{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0;}
+  @media (max-width:700px){.breakdown-lists{grid-template-columns:1fr;}}
+
+  .dp-homepage-btn{
+    border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12.5px;
+    font-weight:700;color:var(--text);text-decoration:none;
+  }
+  .dp-homepage-btn:hover{background:var(--surface-2);}
+
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;margin-top:16px;}
+  .info-item-wide{grid-column:1 / -1;}
+  .info-label{font-size:12px;color:var(--muted);margin-bottom:3px;}
+  .info-value{font-size:14.5px;font-weight:700;color:var(--text);}
+
+  .stock-section{margin-top:26px;}
+  .stock-section h3{font-size:14px;font-weight:700;margin:0 0 12px;}
+  .chart-subtitle{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:6px;}
+
+  .donut-section{display:flex;gap:24px;align-items:center;flex-wrap:wrap;}
+  .donut-canvas-wrap{width:150px;height:150px;flex-shrink:0;}
+  .donut-legend{flex:1;min-width:180px;}
+  .donut-legend-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .donut-legend-row:last-child{border-bottom:none;}
+  .donut-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
+
+  .podium{display:flex;justify-content:center;align-items:flex-end;gap:12px;margin-top:10px;}
+  .podium-item{
+    background:var(--surface-2);border-radius:12px;padding:14px 10px;text-align:center;
+    flex:1;max-width:150px;
+  }
+  .podium-item.first{
+    background:#fff7e0;border:2px solid #f2b84b;padding-top:20px;padding-bottom:18px;
+    transform:translateY(-8px);
+  }
+  .podium-medal{font-size:26px;line-height:1;}
+  .podium-item.first .podium-medal{font-size:32px;}
+  .podium-name{font-weight:700;font-size:12.5px;margin-top:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .podium-count{font-size:12px;color:var(--muted);margin-top:3px;}
+
+  .insight-panel{background:var(--blue-soft);}
+  .insight-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;}
+  .insight-list li{
+    font-size:13.5px;line-height:1.5;padding-left:20px;position:relative;
+  }
+  .insight-list li::before{content:'•';position:absolute;left:4px;color:var(--blue);font-weight:700;}
+  .insight-list b{font-weight:700;}
+  .insight-list .up-text{color:var(--up);font-weight:700;}
+  .insight-list .down-text{color:var(--down);font-weight:700;}
+  .insight-footnote{margin-top:12px;font-size:11px;color:var(--muted);}
+
+  .ai-comment-row{display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(49,130,246,0.2);}
+  .ai-btn{
+    background:var(--blue);color:#fff;border:none;border-radius:8px;
+    padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;
+  }
+  .ai-btn:disabled{opacity:0.6;cursor:default;}
+  .ai-reset-btn{
+    background:none;border:none;color:var(--muted);font-size:11.5px;cursor:pointer;text-decoration:underline;
+  }
+  .ai-comment-box{
+    margin-top:12px;background:#fff;border-radius:10px;padding:14px 16px;
+    font-size:13.5px;line-height:1.6;white-space:pre-wrap;color:var(--text);
+  }
+  .bd-block h4{font-size:12px;color:var(--muted);font-weight:700;margin:0 0 8px;}
+  .bd-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);}
+  .bd-row:last-child{border-bottom:none;}
+  .detail-jobs .dj-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .detail-jobs .dj-row:last-child{border-bottom:none;}
+  .dj-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;}
+  .dj-meta{color:var(--muted);font-size:11.5px;flex-shrink:0;}
+  .placeholder-hint{color:var(--muted);font-size:13px;text-align:center;padding:20px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="header-title">
+      <img src="https://i.gamejob.co.kr/pc/images/gamejob_share.png" alt="GAMEJOB" class="header-logo">
+      <h1>게임잡 채용 트래커</h1>
+    </div>
+    <label class="upload-btn" id="uploadBtn" style="display:none;">
+      CSV 불러오기
+      <input type="file" id="fileInput" accept=".csv" multiple>
+    </label>
+  </header>
+
+  <div id="emptyState" class="empty">
+    <strong>데이터를 불러오는 중이에요...</strong>
+    잠시 후에도 안 뜨면 GitHub Actions가 아직 한 번도 실행되지 않았을 수 있어요.
+  </div>
+
+  <div id="autoLoadNote" style="display:none;font-size:12px;color:var(--muted);margin:-10px 0 14px;">
+    © KONGSTUDIOS. All rights reserved.
+  </div>
+
+  <div id="content" style="display:none;">
+    <div class="stat-row" id="statRow"></div>
+
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-view="home">홈</button>
+      <button class="nav-tab" data-view="company">기업별</button>
+      <button class="nav-tab" data-view="category">공고별</button>
+      <button class="nav-tab" data-view="employment">고용형태별</button>
+    </div>
+
+    <!-- 홈 -->
+    <div class="view active" id="view-home">
+      <div class="panel" id="homeTrendPanel" style="display:none;">
+        <div class="panel-title">월별 전체 공고 수 추이</div>
+        <canvas id="trendChart" height="70"></canvas>
+      </div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-title">공고 많은 직무 TOP 10 <span class="see-all" data-goto="category">전체보기</span></div>
+          <table class="rank" id="homeCategoryTable">
+            <thead><tr><th></th><th>직무</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="panel">
+          <div class="panel-title">공고 많은 기업 TOP 10 <span class="see-all" data-goto="company">전체보기</span></div>
+          <table class="rank" id="homeCompanyTable">
+            <thead><tr><th></th><th>기업</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel insight-panel" id="insightPanel" style="display:none;">
+        <div class="panel-title">📝 이번 달 채용 트렌드 요약</div>
+        <ul class="insight-list" id="insightList"></ul>
+        <div class="insight-footnote">데이터 기반으로 자동 생성된 요약이에요.</div>
+
+        <div class="ai-comment-row">
+          <button class="ai-btn" id="aiCommentBtn" onclick="generateAiComment()">🤖 Gemini AI 종합 트렌드 분석</button>
+          <button class="ai-reset-btn" onclick="resetGeminiApiKey()">API 키 재설정</button>
+        </div>
+        <div class="ai-comment-box" id="aiCommentBox" style="display:none;"></div>
+      </div>
+      <div class="panel" id="insightPlaceholder" style="display:none;">
+        <div class="placeholder-hint">스냅샷이 2개 이상 쌓이면(다음 달부터) 여기에 트렌드 요약이 자동으로 나와요.</div>
+      </div>
+    </div>
+
+    <!-- 기업별 -->
+    <div class="view" id="view-company">
+      <div class="detail-panel" id="companyDetail"></div>
+      <div id="companyListSection">
+        <input type="text" class="search-input" id="companySearch" placeholder="기업명 검색...">
+        <div class="sort-chips" data-kind="company">
+          <button class="chip active" data-sort="count">공고 많은순</button>
+          <button class="chip" data-sort="increase">증가순</button>
+          <button class="chip" data-sort="decrease">감소순</button>
+          <button class="chip" data-sort="name">이름순</button>
+        </div>
+        <table class="rank" id="companyRankTable">
+          <thead><tr><th></th><th>기업</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
+          <tbody id="companyRankBody"></tbody>
+        </table>
+        <div class="row-count" id="companyRowCount"></div>
+      </div>
+    </div>
+
+    <!-- 공고별(직종) -->
+    <div class="view" id="view-category">
+      <div class="detail-panel" id="categoryDetail"></div>
+      <input type="text" class="search-input" id="categorySearch" placeholder="직무 검색...">
+      <div class="sort-chips" data-kind="category">
+        <button class="chip active" data-sort="count">공고 많은순</button>
+        <button class="chip" data-sort="increase">증가순</button>
+        <button class="chip" data-sort="decrease">감소순</button>
+        <button class="chip" data-sort="name">이름순</button>
+      </div>
+      <table class="rank" id="categoryRankTable">
+        <thead><tr><th></th><th>직무</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
+        <tbody id="categoryRankBody"></tbody>
+      </table>
+      <div class="row-count" id="categoryRowCount"></div>
+    </div>
+
+    <!-- 고용형태별 -->
+    <div class="view" id="view-employment">
+      <div class="detail-panel" id="employmentDetail"></div>
+      <div class="panel">
+        <div class="panel-title">고용형태별 비율</div>
+        <div class="donut-section">
+          <div class="donut-canvas-wrap"><canvas id="employmentDonutCanvas"></canvas></div>
+          <div class="donut-legend" id="employmentDonutLegend"></div>
+        </div>
+      </div>
+      <table class="rank" id="employmentRankTable">
+        <thead><tr><th></th><th>고용형태</th><th>추이</th><th>공고</th><th>전월대비</th></tr></thead>
+        <tbody id="employmentRankBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let snapshots = [];
+let charts = {};
+let selected = {company:null, category:null, employment:null};
+let sortStateByKind = {company:'count', category:'count', employment:'count'};
+
+document.getElementById('fileInput').addEventListener('change', async (e)=>{
+  const files = Array.from(e.target.files);
+  if(!files.length) return;
+  const parsed = await Promise.all(files.map(parseFile));
+  applySnapshots(parsed);
+});
+
+function applySnapshots(parsed){
+  snapshots = parsed.filter(Boolean).sort((a,b)=> a.date.localeCompare(b.date));
+  if(!snapshots.length){
+    alert('csv를 읽지 못했어요. gamejob_tracker.py가 만든 snapshots 폴더의 csv 파일이 맞는지 확인해주세요.');
+    return;
+  }
+  render();
+}
+
+/* 온라인 호스팅(GitHub Pages)에서는 GitHub API로 data/snapshots 폴더 안의
+   csv 파일 목록을 직접 물어봐서 자동으로 불러옵니다. file://로 그냥 열었을
+   때는 브라우저 보안 정책 때문에 이 방식이 안 통하니, 그때는 위쪽
+   "CSV 불러오기" 버튼으로 수동 업로드하면 됩니다. */
+async function tryAutoLoad(){
+  // github.io로 호스팅된 경우에만 시도 (예: sunggyuhong-eng.github.io/gamejob-jobs/)
+  const host = window.location.hostname; // 예: sunggyuhong-eng.github.io
+  const pathParts = window.location.pathname.split('/').filter(Boolean); // 예: ['gamejob-jobs','dashboard.html']
+  if(!host.endsWith('github.io') || !pathParts.length) return false;
+
+  const owner = host.split('.')[0];
+  const repo = pathParts[0];
+
+  try{
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/data/snapshots`;
+    const res = await fetch(apiUrl, {cache:'no-store'});
+    if(!res.ok) return false;
+    const items = await res.json();
+    const csvFiles = items.filter(it => it.name.endsWith('.csv'));
+    if(!csvFiles.length) return false;
+
+    const parsed = await Promise.all(csvFiles.map(async (it)=>{
+      const r = await fetch(it.download_url, {cache:'no-store'});
+      if(!r.ok) return null;
+      const text = await r.text();
+      const dateMatch = it.name.match(/(\d{4}-\d{2}-\d{2})/);
+      const date = dateMatch ? dateMatch[1] : it.name;
+      const parsedCsv = Papa.parse(text, {header:true, skipEmptyLines:true});
+      return {date, jobs: parsedCsv.data.filter(row=>row.gi_no)};
+    }));
+
+    applySnapshots(parsed);
+    document.getElementById('autoLoadNote').style.display = 'block';
+    return true;
+  }catch(err){
+    return false;
+  }
+}
+
+window.addEventListener('DOMContentLoaded', async ()=>{
+  const ok = await tryAutoLoad();
+  if(!ok){
+    // 자동 로드 실패 시(예: 로컬에서 직접 열었거나, 아직 Actions가 한 번도 안 돌았을 때)
+    // 수동 업로드 버튼을 보여주는 걸로 대체
+    document.getElementById('uploadBtn').style.display = 'inline-flex';
+    document.getElementById('emptyState').innerHTML =
+      '<strong>자동으로 데이터를 못 불러왔어요</strong>' +
+      'GitHub Actions가 아직 안 돌았거나 로컬에서 열어본 경우일 수 있어요.<br>' +
+      '위쪽 "CSV 불러오기" 버튼으로 직접 올려서 확인할 수 있어요.';
+  }
+});
+
+function parseFile(file){
+  return new Promise((resolve)=>{
+    const dateMatch = file.name.match(/(\d{4}-\d{2}-\d{2})/);
+    const date = dateMatch ? dateMatch[1] : file.name;
+    Papa.parse(file, {
+      header:true, skipEmptyLines:true, encoding:'UTF-8',
+      complete: (res)=> resolve({date, jobs: res.data.filter(r=>r.gi_no)}),
+      error: ()=> resolve(null)
+    });
+  });
+}
+
+function escapeHtml(s){
+  if(s==null) return '';
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function jobCategories(j){
+  if(j.job_categories && j.job_categories.trim()){
+    return j.job_categories.split(';').map(s=>s.trim()).filter(Boolean);
+  }
+  return [j.job_function || '기타/미분류'];
+}
+
+/* 정확한 직종 문자열 -> 큰 부서 그룹으로 매핑 + 이모지.
+   순서가 중요합니다: "사업기획"이 "기획"보다 먼저 "사업"으로 잡히도록
+   사업을 기획보다 먼저 검사합니다. */
+const GROUP_INFO = [
+  ['개발', '💻', ['클라이언트','서버','엔진','AI 개발','플랫폼','인프라','프로그래','개발자','백엔드','프론트','네트워크','기술지원']],
+  ['아트', '🎨', ['디자인','원화','모델링','애니메이션','이펙트','그래픽','아트','일러스트','컨셉','사운드','영상']],
+  ['QA', '🧪', ['QA','테스트','운영','고객','커뮤니티']],
+  ['사업', '📈', ['사업','마케팅','홍보','영업','BD','퍼블리싱','미디어','전략']],
+  ['기획', '📋', ['기획','시나리오','레벨디자인','밸런스']],
+];
+const DEFAULT_GROUP = ['지원부서', '🗂️'];
+
+function classifyBroadGroup(categoryStr){
+  const s = categoryStr || '';
+  for(const [group, emoji, keywords] of GROUP_INFO){
+    if(keywords.some(kw => s.includes(kw))) return [group, emoji];
+  }
+  return DEFAULT_GROUP;
+}
+
+function categoryLabel(name){
+  const [, emoji] = classifyBroadGroup(name);
+  return `${emoji} ${name}`;
+}
+
+function employmentBucket(j){
+  const t = j.employment_type || '';
+  if(t.includes('정규')) return '정규직';
+  if(t.includes('계약')) return '계약직';
+  if(t.includes('인턴')) return '인턴직';
+  if(t.includes('파견')) return '파견직';
+  return '기타';
+}
+
+const KEY_FNS = {
+  company: j => [j.company_name].filter(Boolean),
+  category: jobCategories,
+  employment: j => [employmentBucket(j)],
+};
+
+/* ---------- 진입점 ---------- */
+function render(){
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('content').style.display='block';
+
+  setupNav();
+  renderStats();
+  renderHomeTrend();
+
+  ['company','category','employment'].forEach(kind=>{
+    buildEntityState(kind);
+  });
+
+  renderHomeRankings();
+  setupEntityView('company');
+  setupEntityView('category');
+  renderEmploymentView();
+  renderInsightSummary();
+}
+
+function setupNav(){
+  document.querySelectorAll('.nav-tab').forEach(btn=>{
+    btn.onclick = ()=>{
+      const view = btn.dataset.view;
+      // 이미 상세(디테일)가 열려있는 탭을 다시 누르면 목록으로 돌아가기
+      if(['company','category','employment'].includes(view) && selected[view]){
+        selected[view] = null;
+        if(view==='company' || view==='category') drawEntityTable(view);
+        if(view==='employment') renderEmploymentView();
+        drawDetail(view);
+      }
+      switchView(view);
+    };
+  });
+  document.querySelectorAll('.see-all').forEach(el=>{
+    el.onclick = ()=> switchView(el.dataset.goto);
+  });
+}
+
+function switchView(view){
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active', v.id==='view-'+view));
+}
+
+function destroyChart(key){ if(charts[key]){ charts[key].destroy(); delete charts[key]; } }
+
+/* ---------- 상단 요약 ---------- */
+function renderStats(){
+  const latest = snapshots[snapshots.length-1];
+  const prev = snapshots.length>1 ? snapshots[snapshots.length-2] : null;
+  const row = document.getElementById('statRow');
+  let newCount=null, removedCount=null;
+  if(prev){
+    const prevIds = new Set(prev.jobs.map(j=>j.gi_no));
+    const curIds = new Set(latest.jobs.map(j=>j.gi_no));
+    newCount = latest.jobs.filter(j=>!prevIds.has(j.gi_no)).length;
+    removedCount = prev.jobs.filter(j=>!curIds.has(j.gi_no)).length;
+  }
+  row.innerHTML = `
+    <div class="stat-card"><div class="label">전체 공고 (${latest.date})</div><div class="num">${latest.jobs.length}</div></div>
+    <div class="stat-card"><div class="label">신규 등록</div><div class="num ${newCount!=null?'up':''}">${newCount!=null?'+'+newCount:'—'}</div></div>
+    <div class="stat-card"><div class="label">삭제 / 마감</div><div class="num ${removedCount!=null?'down':''}">${removedCount!=null?'-'+removedCount:'—'}</div></div>
+  `;
+}
+
+function renderHomeTrend(){
+  const panel = document.getElementById('homeTrendPanel');
+  if(snapshots.length<2){ panel.style.display='none'; return; }
+  panel.style.display='block';
+  destroyChart('trend');
+  charts.trend = new Chart(document.getElementById('trendChart'), {
+    type:'line',
+    data:{ labels: snapshots.map(s=>s.date), datasets:[{
+      data: snapshots.map(s=>s.jobs.length),
+      borderColor:'#3182f6', backgroundColor:'rgba(49,130,246,0.08)',
+      fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:'#3182f6'
+    }]},
+    options:{ plugins:{legend:{display:false}},
+      scales:{ x:{ticks:{color:'#8b95a1'},grid:{display:false}}, y:{ticks:{color:'#8b95a1'},grid:{color:'#eaebee'}} } }
+  });
+}
+
+/* ---------- 엔티티(기업/직무/고용형태) 공통 로직 ---------- */
+const entityState = {};
+
+function buildSeries(getKeys){
+  const map = {};
+  snapshots.forEach((snap, idx)=>{
+    const counts = {};
+    snap.jobs.forEach(j=>{
+      getKeys(j).forEach(k=>{ if(k) counts[k]=(counts[k]||0)+1; });
+    });
+    Object.keys(counts).forEach(k=>{
+      if(!map[k]) map[k] = new Array(snapshots.length).fill(0);
+      map[k][idx] = counts[k];
+    });
+  });
+  return map;
+}
+
+function buildEntityState(kind){
+  const map = buildSeries(KEY_FNS[kind]);
+
+  let infoMap = {};
+  if(kind==='company'){
+    const latestSnap = snapshots[snapshots.length-1];
+    latestSnap.jobs.forEach(j=>{
+      if(j.company_name && !infoMap[j.company_name]){
+        infoMap[j.company_name] = {
+          logo: j.company_logo_url || null,
+          ceo: j.company_ceo || null,
+          foundedYear: j.company_founded_year || null,
+          flagshipGames: j.company_flagship_games || null,
+          homepage: j.company_homepage || null,
+        };
+      }
+    });
+  }
+
+  const entries = Object.keys(map).map(name=>{
+    const series = map[name];
+    const latest = series[series.length-1];
+    const prev = series.length>1 ? series[series.length-2] : null;
+    const delta = prev!=null ? latest-prev : null;
+    const pct = (delta!=null && prev>0) ? (delta/prev*100) : null;
+    const info = infoMap[name] || {};
+    return {name, series, latest, delta, pct, isNew: prev===0 && latest>0, logo: info.logo || null,
+      ceo: info.ceo || null, foundedYear: info.foundedYear || null,
+      flagshipGames: info.flagshipGames || null, homepage: info.homepage || null};
+  });
+  entityState[kind] = entries;
+}
+
+function sortEntries(entries, sortKey){
+  const arr = [...entries];
+  if(sortKey==='count') arr.sort((a,b)=> b.latest-a.latest);
+  else if(sortKey==='increase') arr.sort((a,b)=> (b.delta??-Infinity)-(a.delta??-Infinity));
+  else if(sortKey==='decrease') arr.sort((a,b)=> (a.delta??Infinity)-(b.delta??Infinity));
+  else if(sortKey==='name') arr.sort((a,b)=> a.name.localeCompare(b.name));
+  return arr;
+}
+
+function sparklineSvg(series){
+  const w=54,h=22,pad=2;
+  const min=Math.min(...series), max=Math.max(...series);
+  const range=(max-min)||1;
+  const step = series.length>1 ? (w-2*pad)/(series.length-1) : 0;
+  const pts = series.map((v,i)=>{
+    const x=pad+i*step, y=h-pad-((v-min)/range)*(h-2*pad);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  const last=series[series.length-1], first=series[0];
+  const color = last>first?'#f04452':(last<first?'#3182f6':'#c7ccd3');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+
+function deltaCellHtml(e, hasHistory){
+  if(!hasHistory) return '';
+  if(e.isNew) return `<span class="delta-new">NEW</span>`;
+  if(e.delta==null) return `<span class="delta-flat">—</span>`;
+  const cls = e.delta>0?'delta-up':(e.delta<0?'delta-down':'delta-flat');
+  const sign = e.delta>0?'+':'';
+  const pctText = e.pct!=null ? ` (${e.pct>0?'+':''}${e.pct.toFixed(0)}%)` : '';
+  const arrow = e.delta>0?'▲':(e.delta<0?'▼':'');
+  return `<span class="${cls}">${arrow} ${sign}${e.delta}${pctText}</span>`;
+}
+
+function logoImgHtml(e, size){
+  if(!e.logo) return '';
+  return `<img src="${escapeHtml(e.logo)}" alt="" loading="lazy" width="${size}" height="${size}"
+    style="border-radius:6px;object-fit:contain;background:#fff;border:1px solid var(--border);vertical-align:middle;margin-right:8px;flex-shrink:0;"
+    onerror="this.style.display='none'">`;
+}
+
+function renderRankRows(tbodyEl, entries, kind, limit, navigateOnClick){
+  const hasHistory = snapshots.length>1;
+  const list = limit ? entries.slice(0,limit) : entries;
+  tbodyEl.innerHTML = list.map((e,i)=>{
+    const sel = selected[kind]===e.name;
+    const displayName = kind==='category' ? categoryLabel(e.name) : e.name;
+    return `
+      <tr class="${sel?'selected':''}" data-name="${escapeHtml(e.name)}" data-kind="${kind}">
+        <td>${i+1}</td>
+        <td class="name-cell" style="display:flex;align-items:center;min-width:0;">${logoImgHtml(e,20)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">${escapeHtml(displayName)}</span></td>
+        <td class="spark-cell">${hasHistory ? sparklineSvg(e.series) : ''}</td>
+        <td>${e.latest}</td>
+        <td>${deltaCellHtml(e, hasHistory)}</td>
+      </tr>
+    `;
+  }).join('');
+  tbodyEl.querySelectorAll('tr').forEach(tr=>{
+    if(navigateOnClick){
+      tr.onclick = ()=> goToEntityDetail(tr.dataset.kind, tr.dataset.name);
+    }else{
+      tr.onclick = ()=> selectEntity(tr.dataset.kind, tr.dataset.name);
+    }
+  });
+}
+
+/* 홈 화면 랭킹에서 클릭 -> 해당 탭으로 이동하면서 그 항목 상세를 바로 열어줌 */
+function goToEntityDetail(kind, name){
+  selected[kind] = name;
+  switchView(kind);
+  renderHomeRankings();
+  if(kind==='company' || kind==='category') drawEntityTable(kind);
+  if(kind==='employment') renderEmploymentView();
+  drawDetail(kind);
+}
+
+/* ---------- 홈 랭킹 ---------- */
+function renderHomeRankings(){
+  const catEntries = sortEntries(entityState.category, 'count');
+  const compEntries = sortEntries(entityState.company, 'count');
+  renderRankRows(document.querySelector('#homeCategoryTable tbody'), catEntries, 'category', 10, true);
+  renderRankRows(document.querySelector('#homeCompanyTable tbody'), compEntries, 'company', 10, true);
+}
+
+/* ---------- 이번 달 채용 트렌드 요약 (규칙 기반 자동 생성) ---------- */
+function fmtPct(delta, prev){
+  if(prev>0) return ` (${delta>0?'+':''}${(delta/prev*100).toFixed(0)}%)`;
+  if(delta>0) return ' (신규)';
+  return '';
+}
+
+function computeMonthlyStats(){
+  if(snapshots.length<2) return null;
+  const latest = snapshots[snapshots.length-1];
+  const prev = snapshots[snapshots.length-2];
+
+  const totalDelta = latest.jobs.length - prev.jobs.length;
+
+  const groupCountsOf = (jobs)=>{
+    const c = {}; GROUP_ORDER.forEach(g=>c[g]=0);
+    jobs.forEach(j=>{
+      const groupsHit = new Set(jobCategories(j).map(x=>classifyBroadGroup(x)[0]));
+      groupsHit.forEach(g=>{ if(c[g]!=null) c[g]++; });
+    });
+    return c;
+  };
+  const curG = groupCountsOf(latest.jobs), prevG = groupCountsOf(prev.jobs);
+  const groupDeltas = GROUP_ORDER.map(g=>({g, delta:curG[g]-prevG[g], cur:curG[g], prev:prevG[g]}))
+    .filter(d=> d.cur>0 || d.prev>0);
+
+  const empCountsOf = (jobs)=>{
+    const c = {};
+    jobs.forEach(j=>{ const b = employmentBucket(j); c[b] = (c[b]||0)+1; });
+    return c;
+  };
+  const curE = empCountsOf(latest.jobs);
+  const prevE = empCountsOf(prev.jobs);
+  const empBreakdown = Object.keys(curE).map(name=>({
+    name, cur: curE[name], prev: prevE[name]||0,
+    pct: Number((curE[name]/latest.jobs.length*100).toFixed(1))
+  })).sort((a,b)=>b.cur-a.cur);
+
+  const compSorted = [...entityState.company].filter(e=>e.delta!=null).sort((a,b)=>b.delta-a.delta);
+  const compGain = compSorted[0];
+  const compDrop = compSorted[compSorted.length-1];
+
+  return {
+    date: latest.date, prevDate: prev.date,
+    latestTotal: latest.jobs.length, prevTotal: prev.jobs.length, totalDelta,
+    groupDeltas, empBreakdown, compGain, compDrop,
+  };
+}
+
+function renderInsightSummary(){
+  const panel = document.getElementById('insightPanel');
+  const placeholder = document.getElementById('insightPlaceholder');
+
+  const stats = computeMonthlyStats();
+  if(!stats){
+    panel.style.display = 'none';
+    placeholder.style.display = 'block';
+    return;
+  }
+  placeholder.style.display = 'none';
+  panel.style.display = 'block';
+
+  const bullets = [];
+
+  if(stats.totalDelta > 0){
+    bullets.push(`전체 채용 공고가 지난달보다 <span class="up-text">${stats.totalDelta}건 늘어난</span> ${stats.latestTotal}건이에요.`);
+  }else if(stats.totalDelta < 0){
+    bullets.push(`전체 채용 공고가 지난달보다 <span class="down-text">${Math.abs(stats.totalDelta)}건 줄어든</span> ${stats.latestTotal}건이에요.`);
+  }else{
+    bullets.push(`전체 채용 공고 수는 지난달과 동일한 ${stats.latestTotal}건이에요.`);
+  }
+
+  const topGain = [...stats.groupDeltas].sort((a,b)=>b.delta-a.delta)[0];
+  const topDrop = [...stats.groupDeltas].sort((a,b)=>a.delta-b.delta)[0];
+
+  if(topGain && topGain.delta>0){
+    bullets.push(`${GROUP_EMOJI_MAP[topGain.g]} <b>${topGain.g}</b> 직군 채용이 가장 많이 늘었어요 — <span class="up-text">+${topGain.delta}건${fmtPct(topGain.delta, topGain.prev)}</span>, 현재 ${topGain.cur}건 채용 중.`);
+  }
+  if(topDrop && topDrop.delta<0 && topDrop.g!==(topGain && topGain.g)){
+    bullets.push(`${GROUP_EMOJI_MAP[topDrop.g]} <b>${topDrop.g}</b> 직군 채용은 가장 많이 줄었어요 — <span class="down-text">${topDrop.delta}건${fmtPct(topDrop.delta, topDrop.prev)}</span>, 현재 ${topDrop.cur}건.`);
+  }
+
+  if(stats.empBreakdown.length){
+    const top = stats.empBreakdown[0];
+    const empDelta = top.cur - top.prev;
+    const deltaText = empDelta!==0 ? ` (지난달 대비 ${empDelta>0?'+':''}${empDelta}건)` : '';
+    bullets.push(`고용형태는 <b>${top.name}</b> 비중이 ${top.pct}%로 가장 높아요 (${top.cur}건)${deltaText}.`);
+  }
+
+  if(stats.compGain && stats.compGain.delta>0){
+    bullets.push(`<b>${escapeHtml(stats.compGain.name)}</b>이(가) 채용 공고를 가장 많이 늘렸어요 — <span class="up-text">+${stats.compGain.delta}건</span>, 현재 ${stats.compGain.latest}건.`);
+  }
+  if(stats.compDrop && stats.compDrop.delta<0 && stats.compDrop.name!==(stats.compGain && stats.compGain.name)){
+    bullets.push(`<b>${escapeHtml(stats.compDrop.name)}</b>은(는) 채용 공고를 가장 많이 줄였어요 — <span class="down-text">${stats.compDrop.delta}건</span>, 현재 ${stats.compDrop.latest}건.`);
+  }
+
+  document.getElementById('insightList').innerHTML = bullets.map(b=>`<li>${b}</li>`).join('');
+}
+
+/* ---------- AI 코멘트 (Gemini API + Google Search Grounding 연동) ---------- */
+function getGeminiApiKey(promptIfMissing){
+  let key = localStorage.getItem('gemini_api_key');
+  if(!key && promptIfMissing){
+    key = window.prompt('Gemini API 키를 입력하세요 (aistudio.google.com 에서 무료 발급 가능).\n이 브라우저에만 저장되며 외부로 유출되지 않습니다.');
+    if(key) localStorage.setItem('gemini_api_key', key.trim());
+  }
+  return key ? key.trim() : null;
+}
+
+function resetGeminiApiKey(){
+  localStorage.removeItem('gemini_api_key');
+  alert('저장된 Gemini API 키를 지웠습니다. 다음에 분석 버튼을 누르면 다시 입력 창이 나타납니다.');
+}
+
+function buildAiPrompt(stats){
+  const groupLines = stats.groupDeltas.map(d=>
+    `- ${d.g}: 이번달 ${d.cur}건 (지난달 ${d.prev}건, 변동: ${d.delta>=0?'+':''}${d.delta}건)`
+  ).join('\n');
+  
+  const empLines = stats.empBreakdown.map(e=>
+    `- ${e.name}: 이번달 ${e.cur}건 (${e.pct}%), 지난달 ${e.prev}건`
+  ).join('\n');
+
+  const gainComp = stats.compGain ? stats.compGain.name : '없음';
+  const dropComp = stats.compDrop ? stats.compDrop.name : '없음';
+
+  return `너는 대한민국 게임 산업 전문 애널리스트이자 채용 시장 분석가야.
+제공된 게임잡 채용 스냅샷 데이터와 너의 Google Search 기능(최신 회사 뉴스, 신작 게임 프로젝트 발표, 게임 업계 이슈 등)을 종합 활용하여 깊이 있는 분석 리포트를 작성해줘.
+
+[이번 달 게임잡 채용 데이터]
+- 전체 공고 수: 이번달(${stats.date}) ${stats.latestTotal}건 / 지난달(${stats.prevDate}) ${stats.prevTotal}건 (전월 대비: ${stats.totalDelta>=0?'+':''}${stats.totalDelta}건)
+
+[직무 그룹별 변동]
+${groupLines}
+
+[고용형태별 비중]
+${empLines}
+
+[주요 기업 변동]
+- 공고 증가 1위 기업: ${gainComp} (${stats.compGain ? (stats.compGain.delta>=0?'+':'')+stats.compGain.delta : 0}건)
+- 공고 감소 1위 기업: ${dropComp} (${stats.compDrop ? stats.compDrop.delta : 0}건)
+
+[분석 요구사항 및 리포트 작성 가이드]
+1. 직무 및 고용형태 동향 분석: 어떤 직무군(개발, 아트, 기획 등)과 고용형태가 시장을 이끌고 있는지 요약해줘.
+2. 최신 회사 뉴스 & 게임 프로젝트 연계 분석:
+   - 공고 변동이 큰 주요 기업들(${gainComp}, ${dropComp} 등)에 대해 최신 소식, 신작 라이브 서비스 및 프로젝트 개발 상황, 구조조정/투자 이슈 등을 실시간 검색하여 채용 증감의 배경 원인을 구체적으로 분석해줘.
+   - 최근 게임 업계 트렌드(AI 도입, 모바일/PC/콘솔 다변화, 서브컬처/MMO 등 특정 장르 유행)와 연결지어 설명해줘.
+3. 구직자/현직자 시사점: 현재 채용 시장 흐름에서 게임 구직자들이 가져가야 할 전략 및 향후 전망을 3~4문장으로 정리해줘.
+4. 문체: 가독성 높은 한국어로 작성하고 핵심 키워드는 **볼드체**로 강조해줘.`;
+}
+
+async function generateAiComment(){
+  const stats = computeMonthlyStats();
+  if(!stats){ alert('스냅샷이 2개 이상 쌓여야 AI 분석을 실행할 수 있습니다.'); return; }
+
+  const apiKey = getGeminiApiKey(true);
+  if(!apiKey) return;
+
+  const box = document.getElementById('aiCommentBox');
+  const btn = document.getElementById('aiCommentBtn');
+  box.style.display = 'block';
+  box.innerHTML = '🔍 <b>Gemini AI</b>가 최신 게임 업계 뉴스, 신작 프로젝트 및 채용 데이터를 종합 분석하고 있습니다...';
+  btn.disabled = true;
+
+  try{
+    // Gemini 2.5 Flash 모델 REST API 엔드포인트
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          { parts: [{ text: buildAiPrompt(stats) }] }
+        ],
+        // Google Search Grounding 도구 활성화 (실시간 업계 뉴스 및 프로젝트 검색)
+        tools: [
+          { googleSearch: {} }
+        ]
+      })
+    });
+
+    if(!res.ok){
+      const errData = await res.json().catch(()=>({}));
+      if(res.status === 400 || res.status === 403){
+        box.textContent = 'API 키가 올바르지 않거나 권한이 없습니다. 아래 "API 키 재설정" 버튼을 눌러 다시 입력해 주세요.';
+      }else{
+        box.textContent = `분석 생성 실패 (${res.status}): ${errData.error?.message || res.statusText}`;
+      }
+      return;
+    }
+
+    const data = await res.json();
+    const candidate = data.candidates && data.candidates[0];
+    const text = candidate?.content?.parts?.map(p => p.text).join('\n').trim();
+
+    if(text){
+      // 마크다운 볼드(**) 및 줄바꿈 처리
+      const formattedText = text
+        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+        .replace(/\n/g, '<br>');
+      box.innerHTML = formattedText;
+    } else {
+      box.textContent = '응답 데이터를 생성하지 못했습니다.';
+    }
+  }catch(err){
+    box.textContent = '네트워크 오류로 분석 생성에 실패했습니다: ' + err.message;
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* ---------- 기업별/공고별 탭 (검색+정렬+상세) ---------- */
+function setupEntityView(kind){
+  const searchEl = document.getElementById(kind+'Search');
+  searchEl.oninput = ()=> drawEntityTable(kind);
+
+  document.querySelectorAll(`.sort-chips[data-kind="${kind}"] .chip`).forEach(chip=>{
+    chip.onclick = ()=>{
+      document.querySelectorAll(`.sort-chips[data-kind="${kind}"] .chip`).forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      sortStateByKind[kind] = chip.dataset.sort;
+      drawEntityTable(kind);
+    };
+  });
+
+  drawEntityTable(kind);
+}
+
+function drawEntityTable(kind){
+  const q = document.getElementById(kind+'Search').value.trim().toLowerCase();
+  let entries = entityState[kind].filter(e=> e.name.toLowerCase().includes(q));
+  entries = sortEntries(entries, sortStateByKind[kind]);
+  const tbody = document.getElementById(kind+'RankBody');
+  renderRankRows(tbody, entries, kind, null);
+  document.getElementById(kind+'RowCount').textContent = `${entries.length}개`;
+}
+
+/* ---------- 고용형태 탭 ---------- */
+const EMPLOYMENT_COLORS = {'정규직':'#3182f6','계약직':'#f59e0b','인턴직':'#10b981','파견직':'#8b5cf6','기타':'#64748b'};
+
+function renderEmploymentView(){
+  const entries = sortEntries(entityState.employment, 'count');
+  renderRankRows(document.getElementById('employmentRankBody'), entries, 'employment', null);
+  renderEmploymentDonut(entries);
+}
+
+function renderEmploymentDonut(entries){
+  const total = entries.reduce((sum,e)=> sum+e.latest, 0);
+  if(!total) return;
+
+  destroyChart('employmentDonut');
+  charts.employmentDonut = new Chart(document.getElementById('employmentDonutCanvas'), {
+    type:'doughnut',
+    data:{
+      labels: entries.map(e=>e.name),
+      datasets:[{
+        data: entries.map(e=>e.latest),
+        backgroundColor: entries.map(e=> EMPLOYMENT_COLORS[e.name] || '#c7ccd3'),
+        borderWidth:2, borderColor:'#ffffff'
+      }]
+    },
+    options:{ cutout:'68%', plugins:{legend:{display:false}} }
+  });
+
+  document.getElementById('employmentDonutLegend').innerHTML = entries.map(e=>{
+    const pct = (e.latest/total*100).toFixed(0);
+    const color = EMPLOYMENT_COLORS[e.name] || '#c7ccd3';
+    return `
+      <div class="donut-legend-row">
+        <span><span class="donut-dot" style="background:${color};"></span>${escapeHtml(e.name)}</span>
+        <span>${e.latest}건 · ${pct}%</span>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ---------- 상세 패널 (드릴다운) ---------- */
+function groupCounts(jobs, getKeys){
+  const counts = {};
+  jobs.forEach(j=> getKeys(j).forEach(k=>{ if(k) counts[k]=(counts[k]||0)+1; }));
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+}
+
+/* TOP3를 시상대(포디움) 형태로 보여줌: 2등-1등-3등 순서 배치, 1등 강조 */
+function podiumHtml(sortedEntries){
+  const top3 = sortedEntries.slice(0,3);
+  if(!top3.length) return '<div class="placeholder-hint">데이터 없음</div>';
+  const medal = ['🥇','🥈','🥉'];
+  const displayOrder = [1,0,2].filter(i=> top3[i]);
+  return `
+    <div class="podium">
+      ${displayOrder.map(i=>{
+        const [name, count] = top3[i];
+        return `
+          <div class="podium-item ${i===0?'first':''}">
+            <div class="podium-medal">${medal[i]}</div>
+            <div class="podium-name">${escapeHtml(name)}</div>
+            <div class="podium-count">${count}건</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+const GROUP_ORDER = ['개발','아트','기획','QA','사업','지원부서'];
+const GROUP_COLORS = {
+  '개발':'#3182f6', '아트':'#f59e0b', '기획':'#10b981',
+  'QA':'#8b5cf6', '사업':'#f04452', '지원부서':'#64748b'
+};
+const GROUP_EMOJI_MAP = {'개발':'💻','아트':'🎨','기획':'📋','QA':'🧪','사업':'📈','지원부서':'🗂️'};
+
+/* 특정 회사의, 스냅샷별 큰 직무 그룹(개발/아트/기획/QA/사업/지원부서) 카운트 추이 */
+function buildCompanyGroupSeries(companyName){
+  const result = {};
+  GROUP_ORDER.forEach(g=> result[g] = []);
+  snapshots.forEach(snap=>{
+    const counts = {}; GROUP_ORDER.forEach(g=> counts[g]=0);
+    snap.jobs.forEach(j=>{
+      if(j.company_name !== companyName) return;
+      const groupsHit = new Set(jobCategories(j).map(c=> classifyBroadGroup(c)[0]));
+      groupsHit.forEach(g=>{ if(counts[g]!=null) counts[g]++; });
+    });
+    GROUP_ORDER.forEach(g=> result[g].push(counts[g]));
+  });
+  return result;
+}
+
+function selectEntity(kind, name){
+  selected[kind] = (selected[kind]===name) ? null : name;
+  // 홈 화면의 랭킹도 선택 표시 갱신
+  renderHomeRankings();
+  if(kind==='company') drawEntityTable('company');
+  if(kind==='category') drawEntityTable('category');
+  if(kind==='employment') renderEmploymentView();
+  drawDetail(kind);
+}
+
+function drawDetail(kind){
+  const panel = document.getElementById(kind+'Detail');
+  const name = selected[kind];
+  const chartKey = kind+'Detail';
+
+  if(kind==='company'){
+    const listSection = document.getElementById('companyListSection');
+    if(!name){
+      panel.classList.remove('show');
+      listSection.style.display = 'block';
+      destroyChart(chartKey); destroyChart(chartKey+'Group');
+      return;
+    }
+    listSection.style.display = 'none';
+    panel.classList.add('show');
+    const entry = entityState.company.find(e=>e.name===name);
+    const latestSnap = snapshots[snapshots.length-1];
+    const jobsHere = latestSnap.jobs.filter(j=> KEY_FNS.company(j).includes(name));
+    drawCompanyDetail(panel, name, entry, jobsHere, chartKey);
+    return;
+  }
+
+  if(!name){ panel.classList.remove('show'); destroyChart(chartKey); destroyChart(chartKey+'Group'); return; }
+  panel.classList.add('show');
+
+  const entry = entityState[kind].find(e=>e.name===name);
+  const latestSnap = snapshots[snapshots.length-1];
+  const jobsHere = latestSnap.jobs.filter(j=> KEY_FNS[kind](j).includes(name));
+
+  let breakdownHtml = '';
+  if(kind==='category'){
+    const byComp = groupCounts(jobsHere, j=>[j.company_name]);
+    breakdownHtml = `
+      <div class="stock-section">
+        <h3>이 직무를 채용 중인 회사 TOP 3</h3>
+        ${podiumHtml(byComp)}
+      </div>`;
+  } else if(kind==='employment'){
+    const byComp = groupCounts(jobsHere, j=>[j.company_name]).slice(0,8);
+    const byCat = groupCounts(jobsHere, jobCategories).slice(0,8);
+    breakdownHtml = `
+      <div class="breakdown-lists">
+        <div class="bd-block"><h4>회사별</h4>
+          ${byComp.map(([n,c])=>`<div class="bd-row"><span>${escapeHtml(n)}</span><span>${c}건</span></div>`).join('') || '<div class="placeholder-hint">데이터 없음</div>'}
+        </div>
+        <div class="bd-block"><h4>직무별</h4>
+          ${byCat.map(([n,c])=>`<div class="bd-row"><span>${escapeHtml(categoryLabel(n))}</span><span>${c}건</span></div>`).join('') || '<div class="placeholder-hint">데이터 없음</div>'}
+        </div>
+      </div>`;
+  }
+
+  const titleText = kind==='category' ? categoryLabel(name) : name;
+
+  panel.innerHTML = `
+    <div class="dp-head">
+      <div class="dp-title" style="display:flex;align-items:center;">${kind==='company' ? logoImgHtml(entry,28) : ''}<span>${escapeHtml(titleText)}</span></div>
+      <button class="dp-close" onclick="selectEntity('${kind}', '${name.replace(/'/g, "\\'")}')">닫기 ✕</button>
+    </div>
+    <div class="dp-count">${entry.latest}건</div>
+    <div class="dp-sub">${entry.delta!=null ? `전월대비 ${entry.delta>0?'+':''}${entry.delta}건${entry.pct!=null?` (${entry.pct>0?'+':''}${entry.pct.toFixed(0)}%)`:''}` : '이전 스냅샷 없음'}</div>
+    ${snapshots.length>1 ? `<canvas id="${chartKey}Canvas" height="60"></canvas>` : ''}
+    ${breakdownHtml}
+    <div class="detail-jobs">
+      <h4 style="font-size:12px;color:var(--muted);font-weight:700;margin:14px 0 8px;">현재 등록된 공고 (${jobsHere.length}건)</h4>
+      ${jobsHere.slice(0,20).map(j=>`
+        <div class="dj-row">
+          <div class="dj-title">${escapeHtml(j.title)} · ${escapeHtml(j.company_name)}</div>
+          <div class="dj-meta">${escapeHtml(j.deadline_raw)}</div>
+        </div>
+      `).join('') || '<div class="placeholder-hint">공고가 없어요</div>'}
+      ${jobsHere.length>20 ? `<div class="placeholder-hint">외 ${jobsHere.length-20}건 더 있음</div>` : ''}
+    </div>
+  `;
+
+  if(snapshots.length>1){
+    destroyChart(chartKey);
+    charts[chartKey] = new Chart(document.getElementById(chartKey+'Canvas'), {
+      type:'line',
+      data:{ labels: snapshots.map(s=>s.date), datasets:[{
+        data: entry.series, borderColor:'#3182f6', backgroundColor:'rgba(49,130,246,0.08)',
+        fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:'#3182f6'
+      }]},
+      options:{ plugins:{legend:{display:false}},
+        scales:{ x:{ticks:{color:'#8b95a1'},grid:{display:false}}, y:{ticks:{color:'#8b95a1'},grid:{color:'#eaebee'},beginAtZero:true} } }
+    });
+  }
+}
+
+/* 기업별 상세: 주식 상세페이지 스타일 — 핵심정보 → 직무 구성(도넛) → 세부 직종 → 채용 추이 → 공고 목록 */
+function companyKeyInfoGrid(entry){
+  const items = [
+    ['공고 수', entry.latest + '건'],
+    ['전월대비', entry.delta!=null ? `${entry.delta>0?'+':''}${entry.delta}건${entry.pct!=null?` (${entry.pct>0?'+':''}${entry.pct.toFixed(0)}%)`:''}` : '—'],
+    ['대표자명', entry.ceo],
+    ['설립연도', entry.foundedYear],
+  ].filter(([, v]) => v);
+
+  if(entry.flagshipGames){
+    items.push(['대표게임', entry.flagshipGames]);
+  }
+
+  if(!items.length) return '';
+
+  return `
+    <div class="info-grid">
+      ${items.map(([label, val])=>`
+        <div class="info-item${label==='대표게임' ? ' info-item-wide' : ''}">
+          <div class="info-label">${escapeHtml(label)}</div>
+          <div class="info-value">${escapeHtml(val)}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function companyDonutSectionHtml(jobsHere, chartKey){
+  if(!jobsHere.length){
+    return '<div class="placeholder-hint">현재 등록된 공고가 없어요</div>';
+  }
+  return `
+    <div class="donut-section">
+      <div class="donut-canvas-wrap"><canvas id="${chartKey}DonutCanvas"></canvas></div>
+      <div class="donut-legend" id="${chartKey}DonutLegend"></div>
+    </div>
+  `;
+}
+
+function drawCompanyDetail(panel, name, entry, jobsHere, chartKey){
+  const byCat = groupCounts(jobsHere, jobCategories).slice(0,10);
+  const hasHistory = snapshots.length>1;
+
+  panel.innerHTML = `
+    <div class="dp-head">
+      <button class="dp-back" onclick="selectEntity('company', '${name.replace(/'/g, "\\'")}')">← 기업 목록으로</button>
+      ${entry.homepage ? `<a class="dp-homepage-btn" href="${escapeHtml(entry.homepage)}" target="_blank" rel="noopener">홈페이지 ↗</a>` : ''}
+    </div>
+    <div class="dp-head" style="margin-top:10px;">
+      <div class="dp-title" style="display:flex;align-items:center;">${logoImgHtml(entry,32)}<span>${escapeHtml(name)}</span></div>
+    </div>
+
+    ${companyKeyInfoGrid(entry)}
+
+    <div class="stock-section">
+      <h3>직무 구성</h3>
+      ${companyDonutSectionHtml(jobsHere, chartKey)}
+    </div>
+
+    <div class="stock-section">
+      <h3>세부 직종별 공고</h3>
+      <div class="bd-block">
+        ${byCat.map(([n,c])=>`<div class="bd-row"><span>${escapeHtml(categoryLabel(n))}</span><span>${c}건</span></div>`).join('') || '<div class="placeholder-hint">데이터 없음</div>'}
+      </div>
+    </div>
+
+    <div class="stock-section">
+      <h3>채용 추이</h3>
+      ${hasHistory ? `
+        <div style="margin-bottom:20px;">
+          <div class="chart-subtitle">전체 공고 수</div>
+          <canvas id="${chartKey}Canvas" height="70"></canvas>
+        </div>
+        <div>
+          <div class="chart-subtitle">직무 그룹별</div>
+          <canvas id="${chartKey}GroupCanvas" height="90"></canvas>
+        </div>
+      ` : '<div class="placeholder-hint">여러 달 데이터가 있어야 추이를 볼 수 있어요</div>'}
+    </div>
+
+    <div class="stock-section">
+      <h3>현재 등록된 공고 (${jobsHere.length}건)</h3>
+      <div class="detail-jobs">
+        ${jobsHere.slice(0,30).map(j=>`
+          <div class="dj-row">
+            <div class="dj-title">${escapeHtml(j.title)}</div>
+            <div class="dj-meta">${escapeHtml(j.deadline_raw)}</div>
+          </div>
+        `).join('') || '<div class="placeholder-hint">공고가 없어요</div>'}
+        ${jobsHere.length>30 ? `<div class="placeholder-hint">외 ${jobsHere.length-30}건 더 있음</div>` : ''}
+      </div>
+    </div>
+  `;
+
+  destroyChart(chartKey);
+  destroyChart(chartKey+'Group');
+  destroyChart(chartKey+'Donut');
+
+  // 직무 구성 도넛차트 (공고 하나당 대표 직무 1개로 집계해서 비율이 100%가 되게 함)
+  if(jobsHere.length){
+    const donutCounts = {}; GROUP_ORDER.forEach(g=> donutCounts[g]=0);
+    jobsHere.forEach(j=>{
+      const cats = jobCategories(j);
+      const primary = cats.length ? cats[0] : '기타/미분류';
+      const [group] = classifyBroadGroup(primary);
+      donutCounts[group] = (donutCounts[group]||0)+1;
+    });
+    const activeGroups = GROUP_ORDER.filter(g=> donutCounts[g]>0);
+    const total = jobsHere.length;
+
+    charts[chartKey+'Donut'] = new Chart(document.getElementById(chartKey+'DonutCanvas'), {
+      type:'doughnut',
+      data:{
+        labels: activeGroups.map(g=>`${GROUP_EMOJI_MAP[g]} ${g}`),
+        datasets:[{
+          data: activeGroups.map(g=>donutCounts[g]),
+          backgroundColor: activeGroups.map(g=>GROUP_COLORS[g]),
+          borderWidth:2, borderColor:'#ffffff'
+        }]
+      },
+      options:{ cutout:'68%', plugins:{legend:{display:false}} }
+    });
+
+    document.getElementById(chartKey+'DonutLegend').innerHTML = activeGroups.map(g=>{
+      const pct = (donutCounts[g]/total*100).toFixed(0);
+      return `
+        <div class="donut-legend-row">
+          <span><span class="donut-dot" style="background:${GROUP_COLORS[g]};"></span>${GROUP_EMOJI_MAP[g]} ${g}</span>
+          <span>${donutCounts[g]}건 · ${pct}%</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  if(hasHistory){
+    charts[chartKey] = new Chart(document.getElementById(chartKey+'Canvas'), {
+      type:'line',
+      data:{ labels: snapshots.map(s=>s.date), datasets:[{
+        data: entry.series, borderColor:'#3182f6', backgroundColor:'rgba(49,130,246,0.08)',
+        fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:'#3182f6'
+      }]},
+      options:{ plugins:{legend:{display:false}},
+        scales:{ x:{ticks:{color:'#8b95a1'},grid:{display:false}}, y:{ticks:{color:'#8b95a1'},grid:{color:'#eaebee'},beginAtZero:true} } }
+    });
+
+    const groupSeries = buildCompanyGroupSeries(name);
+    charts[chartKey+'Group'] = new Chart(document.getElementById(chartKey+'GroupCanvas'), {
+      type:'line',
+      data:{
+        labels: snapshots.map(s=>s.date),
+        datasets: GROUP_ORDER.map(g=>({
+          label: `${GROUP_EMOJI_MAP[g]} ${g}`,
+          data: groupSeries[g],
+          borderColor: GROUP_COLORS[g],
+          backgroundColor: GROUP_COLORS[g],
+          tension:0.3, pointRadius:2, borderWidth:2
+        }))
+      },
+      options:{
+        plugins:{legend:{position:'bottom', labels:{color:'#191f28', boxWidth:10, font:{size:11}}}},
+        scales:{
+          x:{ticks:{color:'#8b95a1'},grid:{display:false}},
+          y:{ticks:{color:'#8b95a1', stepSize:1},grid:{color:'#eaebee'},beginAtZero:true}
+        }
+      }
+    });
+  }
+}
+</script>
+</body>
+</html>

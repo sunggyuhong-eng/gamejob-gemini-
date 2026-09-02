@@ -1,0 +1,1111 @@
+
+
+<div class="jobListWrap">
+  
+    <div class="gjLoading" style="display:none">
+        <span><img src="//i.gamejob.co.kr/pc/images/common/loading.gif" alt="채용정보 리스트 로딩중"></span>
+    </div>
+    <div class="tabBx">
+        <ul class="tabs type_bl" id="anchorCnt">
+            <!-- css로 너비 지정 -->
+                <li class=on >
+                    <a class="tabTit" href="javascript:setTapList(1);" data-value="1">
+                        전체
+<span class="count totalJobcnt">(1577)</span>                    </a>
+                </li>
+                <li  >
+                    <a class="tabTit" href="javascript:setTapList(2);" data-value="2">
+                        대기업
+<span class=count>(333)</span>                    </a>
+                </li>
+                <li  >
+                    <a class="tabTit" href="javascript:setTapList(3);" data-value="3">
+                        중견&#183;중소
+<span class=count>(863)</span>                    </a>
+                </li>
+                <li  >
+                    <a class="tabTit" href="javascript:setTapList(4);" data-value="4">
+                        벤처
+<span class=count>(324)</span>                    </a>
+                </li>
+                <li  >
+                    <a class="tabTit" href="javascript:setTapList(5);" data-value="5">
+                        외국계
+<span class=count>(22)</span>                    </a>
+                </li>
+                <li  >
+                    <a class="tabTit" href="javascript:setTapList(6);" data-value="6">
+                        헤드헌팅
+<span class=count>(11)</span>                    </a>
+                </li>
+        </ul>        
+
+        <div class="sortBooth">
+            <div class="left orderBtns">
+                    <span class="btnSort" data-value="1">
+                        <button id="sort_1" type="button" class=on>
+                            <span>추천순</span><i class="blind">내림차순</i>
+                        </button>
+                    </span><!-- 버튼 활성화 되면 on 클래스 추가 -->
+                    <span class="btnSort" data-value="2">
+                        <button id="sort_2" type="button" >
+                            <span>경력순</span><i class="blind">내림차순</i>
+                        </button>
+                    </span><!-- 버튼 활성화 되면 on 클래스 추가 -->
+                    <span class="btnSort" data-value="3">
+                        <button id="sort_3" type="button" >
+                            <span>등록일순</span><i class="blind">내림차순</i>
+                        </button>
+                    </span><!-- 버튼 활성화 되면 on 클래스 추가 -->
+                    <span class="btnSort" data-value="4">
+                        <button id="sort_4" type="button" >
+                            <span>수정일순</span><i class="blind">내림차순</i>
+                        </button>
+                    </span><!-- 버튼 활성화 되면 on 클래스 추가 -->
+                    <span class="btnSort" data-value="5">
+                        <button id="sort_5" type="button" >
+                            <span>마감일순</span><i class="blind">내림차순</i>
+                        </button>
+                    </span><!-- 버튼 활성화 되면 on 클래스 추가 -->
+
+                <select name="orderTab" id="orderTab" class="tplSlt" title="공고 정렬순 선택" style="visibility:hidden">
+                        <option value="1" selected=selected>추천순</option>
+                        <option value="2" >경력순</option>
+                        <option value="3" >등록일순</option>
+                        <option value="4" >수정일순</option>
+                        <option value="5" >마감일순</option>
+                </select>
+
+                <select name="Tabcd" id="Tabcd" class="tplSlt" title="공고 탭선택" style="visibility:hidden">
+                        <option value="1" selected=selected>전체</option>
+                        <option value="2" >대기업</option>
+                        <option value="3" >중견&#183;중소</option>
+                        <option value="4" >벤처</option>
+                        <option value="5" >외국계</option>
+                        <option value="6" >헤드헌팅</option>
+                </select>
+            </div>
+            <div class="right">
+                <span class="selWrap">
+                        <select class="selBx" name="psTab" id="psTab" title="검색어 정렬 개수">
+                            <option value="20">20개씩</option>
+                            <option value="40" selected="">40개씩</option>
+                        </select>
+                </span>
+            </div>
+        </div>
+
+        <div class="tabCont on" id="tab1">
+            <div class="boothWrap">
+                <h3 class="skip">전체 채용정보 리스트</h3>
+                <article class="boothList">
+                        <table class="tblList">
+                            <caption>채용정보 리스트</caption>
+                            <colgroup>
+                                <col style="width:24%">
+                                <col>
+                                <col style="width:10%">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th scope="col">기업명</th>
+                                    <th scope="col">공고제목</th>
+                                    <th scope="col">마감일</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=35028996" target="_blank">
+                                                    <strong>에이블게임즈</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=282032" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[크레센트] UI 디자이너 모집 (경력 5년이상)', '282032', '에이블게임즈', '없음', IsNullOrWhiteSpace('인터페이스 디자인'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" target="_blank"><strong>[크레센트] UI 디자이너 모집 (경력 5년이상)</strong></a>
+                                                <button type="button" id="btnScrap_282032" class="btnScrap btnScrap_282032 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[크레센트] UI 디자이너 모집 (경력 5년이상)', '282032', '에이블게임즈', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" data-value="282032|ablegames2|282032">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력5년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 강남구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">06/29(월) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=35028996" target="_blank">
+                                                    <strong>에이블게임즈</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=282431" onclick="GA_Application_Prdt('02_공고클릭', 'N', '3D 배경 레벨러 모집(경력 7년 이상)', '282431', '에이블게임즈', '없음', IsNullOrWhiteSpace('모델링'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" target="_blank"><strong>3D 배경 레벨러 모집(경력 7년 이상)</strong></a>
+                                                <button type="button" id="btnScrap_282431" class="btnScrap btnScrap_282431 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '3D 배경 레벨러 모집(경력 7년 이상)', '282431', '에이블게임즈', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" data-value="282431|ablegames2|282431">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력7년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 강남구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">07/07(화) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=35028996" target="_blank">
+                                                    <strong>에이블게임즈</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=282469" onclick="GA_Application_Prdt('02_공고클릭', 'N', '3D 배경 모델러 모집(경력 7년 이상)', '282469', '에이블게임즈', '없음', IsNullOrWhiteSpace('모델링'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" target="_blank"><strong>3D 배경 모델러 모집(경력 7년 이상)</strong></a>
+                                                <button type="button" id="btnScrap_282469" class="btnScrap btnScrap_282469 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '3D 배경 모델러 모집(경력 7년 이상)', '282469', '에이블게임즈', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" data-value="282469|ablegames2|282469">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력7년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 강남구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">07/08(수) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=35028996" target="_blank">
+                                                    <strong>에이블게임즈</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=282601" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[메이플키우기] 게임 QA 모집', '282601', '에이블게임즈', '없음', IsNullOrWhiteSpace('QA&#183;테스터'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" target="_blank"><strong>[메이플키우기] 게임 QA 모집</strong></a>
+                                                <button type="button" id="btnScrap_282601" class="btnScrap btnScrap_282601 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[메이플키우기] 게임 QA 모집', '282601', '에이블게임즈', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" data-value="282601|ablegames2|282601">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 강남구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">07/13(월) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=35028996" target="_blank">
+                                                    <strong>에이블게임즈</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=282893" onclick="GA_Application_Prdt('02_공고클릭', 'N', '2D 스파인 애니메이터 모집', '282893', '에이블게임즈', '없음', IsNullOrWhiteSpace('인터페이스 디자인, 애니메이션'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" target="_blank"><strong>2D 스파인 애니메이터 모집</strong></a>
+                                                <button type="button" id="btnScrap_282893" class="btnScrap btnScrap_282893 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '2D 스파인 애니메이터 모집', '282893', '에이블게임즈', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" data-value="282893|ablegames2|282893">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 강남구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">07/20(월) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=35028996" target="_blank">
+                                                    <strong>에이블게임즈</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=282896" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[달토끼키우기] 전투 기획자 모집', '282896', '에이블게임즈', '없음', IsNullOrWhiteSpace('게임기획'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" target="_blank"><strong>[달토끼키우기] 전투 기획자 모집</strong></a>
+                                                <button type="button" id="btnScrap_282896" class="btnScrap btnScrap_282896 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[달토끼키우기] 전투 기획자 모집', '282896', '에이블게임즈', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" data-value="282896|ablegames2|282896">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 강남구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">07/20(월) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=35028996" target="_blank">
+                                                    <strong>에이블게임즈</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=283165" onclick="GA_Application_Prdt('02_공고클릭', 'N', '아트 PM 모집 (경력 무관)', '283165', '에이블게임즈', '없음', IsNullOrWhiteSpace('게임기획'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" target="_blank"><strong>아트 PM 모집 (경력 무관)</strong></a>
+                                                <button type="button" id="btnScrap_283165" class="btnScrap btnScrap_283165 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '아트 PM 모집 (경력 무관)', '283165', '에이블게임즈', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" data-value="283165|ablegames2|283165">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 강남구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">07/28(화) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=35028996" target="_blank">
+                                                    <strong>에이블게임즈</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=283164" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[크레센트] 개발PM 모집 (경력 3년 이상)', '283164', '에이블게임즈', '없음', IsNullOrWhiteSpace('게임개발(모바일)'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" target="_blank"><strong>[크레센트] 개발PM 모집 (경력 3년 이상)</strong></a>
+                                                <button type="button" id="btnScrap_283164" class="btnScrap btnScrap_283164 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[크레센트] 개발PM 모집 (경력 3년 이상)', '283164', '에이블게임즈', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" data-value="283164|ablegames2|283164">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력3년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 강남구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">07/28(화) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=35028996" target="_blank">
+                                                    <strong>에이블게임즈</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=283759" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[메이플키우기] UI 디자이너 모집(경력 1년 이상)', '283759', '에이블게임즈', '없음', IsNullOrWhiteSpace('인터페이스 디자인'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" target="_blank"><strong>[메이플키우기] UI 디자이너 모집(경력 1년 이상)</strong></a>
+                                                <button type="button" id="btnScrap_283759" class="btnScrap btnScrap_283759 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[메이플키우기] UI 디자이너 모집(경력 1년 이상)', '283759', '에이블게임즈', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" data-value="283759|ablegames2|283759">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력1년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 강남구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">08/12(수) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=35028996" target="_blank">
+                                                    <strong>에이블게임즈</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284107" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[메이플키우기] 기획자 모집', '284107', '에이블게임즈', '없음', IsNullOrWhiteSpace('게임기획'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" target="_blank"><strong>[메이플키우기] 기획자 모집</strong></a>
+                                                <button type="button" id="btnScrap_284107" class="btnScrap btnScrap_284107 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[메이플키우기] 기획자 모집', '284107', '에이블게임즈', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" data-value="284107|ablegames2|284107">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 강남구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">7일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=35028996" target="_blank">
+                                                    <strong>에이블게임즈</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284106" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[메이플키우기] 클라이언트 프로그래머 모집 (산업기능요원 현역/보충역 가능)', '284106', '에이블게임즈', '없음', IsNullOrWhiteSpace('게임개발(클라이언트)'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" target="_blank"><strong>[메이플키우기] 클라이언트 프로그래머 모집 (산업기능요원 현역/보충역 가능)</strong></a>
+                                                <button type="button" id="btnScrap_284106" class="btnScrap btnScrap_284106 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[메이플키우기] 클라이언트 프로그래머 모집 (산업기능요원 현역/보충역 가능)', '284106', '에이블게임즈', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" data-value="284106|ablegames2|284106">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 강남구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">7일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=19209414" target="_blank">
+                                                    <strong>팀42㈜</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=278624" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[신규프로젝트 S] 카툰스타일 이펙트 아티스트 채용', '278624', '팀42㈜', '없음', IsNullOrWhiteSpace('이펙트&#183;FX'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 마포구'));" target="_blank"><strong>[신규프로젝트 S] 카툰스타일 이펙트 아티스트 채용</strong></a>
+                                                <button type="button" id="btnScrap_278624" class="btnScrap btnScrap_278624 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[신규프로젝트 S] 카툰스타일 이펙트 아티스트 채용', '278624', '팀42㈜', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 마포구'));" data-value="278624|ssna21|278624">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 마포구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">2시간 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=19209414" target="_blank">
+                                                    <strong>팀42㈜</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284454" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[마피아42] 컨텐츠 시스템 기획자 채용', '284454', '팀42㈜', '없음', IsNullOrWhiteSpace('게임기획'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 마포구'));" target="_blank"><strong>[마피아42] 컨텐츠 시스템 기획자 채용</strong></a>
+                                                <button type="button" id="btnScrap_284454" class="btnScrap btnScrap_284454 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[마피아42] 컨텐츠 시스템 기획자 채용', '284454', '팀42㈜', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 마포구'));" data-value="284454|ssna21|284454">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력2년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 마포구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직, 병역특례</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">2시간 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=22209089" target="_blank">
+                                                    <strong>㈜스튜디오비사이드</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=281806" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[프로젝트 A] 스토리 제작', '281806', '㈜스튜디오비사이드', '없음', IsNullOrWhiteSpace('게임기획'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" target="_blank"><strong>[프로젝트 A] 스토리 제작</strong></a>
+                                                <button type="button" id="btnScrap_281806" class="btnScrap btnScrap_281806 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[프로젝트 A] 스토리 제작', '281806', '㈜스튜디오비사이드', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" data-value="281806|studiobside|281806">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 성남시</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직, 계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">06/23(화) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=22209089" target="_blank">
+                                                    <strong>㈜스튜디오비사이드</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=281809" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[프로젝트 A] 캐릭터 원화, 일러스트 제작', '281809', '㈜스튜디오비사이드', '없음', IsNullOrWhiteSpace('원화'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" target="_blank"><strong>[프로젝트 A] 캐릭터 원화, 일러스트 제작</strong></a>
+                                                <button type="button" id="btnScrap_281809" class="btnScrap btnScrap_281809 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[프로젝트 A] 캐릭터 원화, 일러스트 제작', '281809', '㈜스튜디오비사이드', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" data-value="281809|studiobside|281809">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 성남시</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직, 계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">06/23(화) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=22209089" target="_blank">
+                                                    <strong>㈜스튜디오비사이드</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=282916" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타세이비어] 이펙터 모집', '282916', '㈜스튜디오비사이드', '없음', IsNullOrWhiteSpace('이펙트&#183;FX'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" target="_blank"><strong>[스타세이비어] 이펙터 모집</strong></a>
+                                                <button type="button" id="btnScrap_282916" class="btnScrap btnScrap_282916 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타세이비어] 이펙터 모집', '282916', '㈜스튜디오비사이드', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" data-value="282916|studiobside|282916">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 성남시</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직, 계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">07/20(월) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=22209089" target="_blank">
+                                                    <strong>㈜스튜디오비사이드</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=283150" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[프로젝트A] 기계, 메카, 밀리터리 전문 원화 아트 디자인', '283150', '㈜스튜디오비사이드', '없음', IsNullOrWhiteSpace('원화'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" target="_blank"><strong>[프로젝트A] 기계, 메카, 밀리터리 전문 원화 아트 디자인</strong></a>
+                                                <button type="button" id="btnScrap_283150" class="btnScrap btnScrap_283150 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[프로젝트A] 기계, 메카, 밀리터리 전문 원화 아트 디자인', '283150', '㈜스튜디오비사이드', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" data-value="283150|studiobside|283150">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 성남시</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직, 계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">07/27(월) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=22209089" target="_blank">
+                                                    <strong>㈜스튜디오비사이드</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=283302" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[프로젝트 I] 모바일 게임 이펙터', '283302', '㈜스튜디오비사이드', '없음', IsNullOrWhiteSpace('이펙트&#183;FX'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" target="_blank"><strong>[프로젝트 I] 모바일 게임 이펙터</strong></a>
+                                                <button type="button" id="btnScrap_283302" class="btnScrap btnScrap_283302 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[프로젝트 I] 모바일 게임 이펙터', '283302', '㈜스튜디오비사이드', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" data-value="283302|studiobside|283302">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 성남시</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직, 계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">07/29(수) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=22209089" target="_blank">
+                                                    <strong>㈜스튜디오비사이드</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=283704" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타세이비어] 3D 캐릭터 애니메이터 모집', '283704', '㈜스튜디오비사이드', '없음', IsNullOrWhiteSpace('애니메이션'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" target="_blank"><strong>[스타세이비어] 3D 캐릭터 애니메이터 모집</strong></a>
+                                                <button type="button" id="btnScrap_283704" class="btnScrap btnScrap_283704 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타세이비어] 3D 캐릭터 애니메이터 모집', '283704', '㈜스튜디오비사이드', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" data-value="283704|studiobside|283704">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 성남시</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직, 계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">08/11(화) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=22209089" target="_blank">
+                                                    <strong>㈜스튜디오비사이드</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=283791" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타세이비어] 2D 캐릭터 원화가 모집', '283791', '㈜스튜디오비사이드', '없음', IsNullOrWhiteSpace('원화'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" target="_blank"><strong>[스타세이비어] 2D 캐릭터 원화가 모집</strong></a>
+                                                <button type="button" id="btnScrap_283791" class="btnScrap btnScrap_283791 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타세이비어] 2D 캐릭터 원화가 모집', '283791', '㈜스튜디오비사이드', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" data-value="283791|studiobside|283791">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 성남시</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직, 계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">08/13(목) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=22209089" target="_blank">
+                                                    <strong>㈜스튜디오비사이드</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=283977" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타세이비어] UI 디자이너 모집', '283977', '㈜스튜디오비사이드', '없음', IsNullOrWhiteSpace('인터페이스 디자인'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" target="_blank"><strong>[스타세이비어] UI 디자이너 모집</strong></a>
+                                                <button type="button" id="btnScrap_283977" class="btnScrap btnScrap_283977 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타세이비어] UI 디자이너 모집', '283977', '㈜스튜디오비사이드', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" data-value="283977|studiobside|283977">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 성남시</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직, 계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">08/19(수) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=22209089" target="_blank">
+                                                    <strong>㈜스튜디오비사이드</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284007" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타세이비어] 스토리, 시나리오 제작 / 컨셉 설정', '284007', '㈜스튜디오비사이드', '없음', IsNullOrWhiteSpace('게임기획'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" target="_blank"><strong>[스타세이비어] 스토리, 시나리오 제작 / 컨셉 설정</strong></a>
+                                                <button type="button" id="btnScrap_284007" class="btnScrap btnScrap_284007 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타세이비어] 스토리, 시나리오 제작 / 컨셉 설정', '284007', '㈜스튜디오비사이드', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" data-value="284007|studiobside|284007">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 성남시</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직, 계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">08/19(수) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=22209089" target="_blank">
+                                                    <strong>㈜스튜디오비사이드</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284009" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타세이비어] 전투 / 캐릭터 / 몬스터 기획 담당자 모집', '284009', '㈜스튜디오비사이드', '없음', IsNullOrWhiteSpace('게임기획'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" target="_blank"><strong>[스타세이비어] 전투 / 캐릭터 / 몬스터 기획 담당자 모집</strong></a>
+                                                <button type="button" id="btnScrap_284009" class="btnScrap btnScrap_284009 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타세이비어] 전투 / 캐릭터 / 몬스터 기획 담당자 모집', '284009', '㈜스튜디오비사이드', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" data-value="284009|studiobside|284009">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>신입</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 성남시</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직, 계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">08/19(수) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=22209089" target="_blank">
+                                                    <strong>㈜스튜디오비사이드</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284393" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[프로젝트A] UI 디자이너 모집', '284393', '㈜스튜디오비사이드', '없음', IsNullOrWhiteSpace('인터페이스 디자인'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" target="_blank"><strong>[프로젝트A] UI 디자이너 모집</strong></a>
+                                                <button type="button" id="btnScrap_284393" class="btnScrap btnScrap_284393 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[프로젝트A] UI 디자이너 모집', '284393', '㈜스튜디오비사이드', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" data-value="284393|studiobside|284393">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 성남시</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직, 계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">1일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=22209089" target="_blank">
+                                                    <strong>㈜스튜디오비사이드</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284397" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[프로젝트A] 이펙터 모집', '284397', '㈜스튜디오비사이드', '없음', IsNullOrWhiteSpace('이펙트&#183;FX'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" target="_blank"><strong>[프로젝트A] 이펙터 모집</strong></a>
+                                                <button type="button" id="btnScrap_284397" class="btnScrap btnScrap_284397 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[프로젝트A] 이펙터 모집', '284397', '㈜스튜디오비사이드', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" data-value="284397|studiobside|284397">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 성남시</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직, 계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">1일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=22209089" target="_blank">
+                                                    <strong>㈜스튜디오비사이드</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284400" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[프로젝트A] 시스템 기획자 모집', '284400', '㈜스튜디오비사이드', '없음', IsNullOrWhiteSpace('게임기획'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" target="_blank"><strong>[프로젝트A] 시스템 기획자 모집</strong></a>
+                                                <button type="button" id="btnScrap_284400" class="btnScrap btnScrap_284400 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[프로젝트A] 시스템 기획자 모집', '284400', '㈜스튜디오비사이드', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 성남시 분당구'));" data-value="284400|studiobside|284400">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 성남시</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직, 계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">1일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=11526566" target="_blank">
+                                                    <strong>주식회사 컴투스</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284452" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[컴투스] 테크니컬 아티스트 (신입/경력)', '284452', '주식회사 컴투스', '없음', IsNullOrWhiteSpace('게임개발(클라이언트), 게임개발(모바일), 모델링, 이펙트&#183;FX, 플랫폼 개발'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 금천구'));" target="_blank"><strong>[컴투스] 테크니컬 아티스트 (신입/경력)</strong></a>
+                                                <button type="button" id="btnScrap_284452" class="btnScrap btnScrap_284452 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[컴투스] 테크니컬 아티스트 (신입/경력)', '284452', '주식회사 컴투스', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 금천구'));" data-value="284452|com2us|284452">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 금천구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">상시</span><span class="modifyDate">2시간 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=43834799" target="_blank">
+                                                    <strong>㈜크로노스튜디오</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=282420" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[크로노스튜디오] 아트 PM 모집', '282420', '㈜크로노스튜디오', '없음', IsNullOrWhiteSpace('게임기획, 게임운영'), IsNullOrWhiteSpace('콘솔게임, 멀티플랫폼게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" target="_blank"><strong>[크로노스튜디오] 아트 PM 모집</strong></a>
+                                                <button type="button" id="btnScrap_282420" class="btnScrap btnScrap_282420 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[크로노스튜디오] 아트 PM 모집', '282420', '㈜크로노스튜디오', '없음', '없음', IsNullOrWhiteSpace('콘솔게임, 멀티플랫폼게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 강남구'));" data-value="282420|chronostudio|282420">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력2년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 강남구</span>
+                                                    <span>콘솔게임, 멀티플랫폼게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">07/07(화) 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=11526566" target="_blank">
+                                                    <strong>주식회사 컴투스</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284450" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[컴투스] Web QA 담당자 (계약직)', '284450', '주식회사 컴투스', '없음', IsNullOrWhiteSpace('게임기획, QA&#183;테스터'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 금천구'));" target="_blank"><strong>[컴투스] Web QA 담당자 (계약직)</strong></a>
+                                                <button type="button" id="btnScrap_284450" class="btnScrap btnScrap_284450 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[컴투스] Web QA 담당자 (계약직)', '284450', '주식회사 컴투스', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 금천구'));" data-value="284450|com2us|284450">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 금천구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">상시</span><span class="modifyDate">2시간 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=51773905" target="_blank">
+                                                    <strong>스타픽시스튜디오</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284352" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타픽시스튜디오] UI 컨텐츠 프로그래머', '284352', '스타픽시스튜디오', '없음', IsNullOrWhiteSpace('게임개발(클라이언트), 게임개발(모바일), 인터페이스 디자인, 서버, 네트워크'), IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" target="_blank"><strong>[스타픽시스튜디오] UI 컨텐츠 프로그래머</strong></a>
+                                                <button type="button" id="btnScrap_284352" class="btnScrap btnScrap_284352 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타픽시스튜디오] UI 컨텐츠 프로그래머', '284352', '스타픽시스튜디오', '없음', '없음', IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" data-value="284352|starpixie|284352">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>신입</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 용인시</span>
+                                                    <span>온라인PC게임, 모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">3일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=51773905" target="_blank">
+                                                    <strong>스타픽시스튜디오</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284353" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타픽시스튜디오] 게임 서비스 운영 직군', '284353', '스타픽시스튜디오', '없음', IsNullOrWhiteSpace('게임운영'), IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" target="_blank"><strong>[스타픽시스튜디오] 게임 서비스 운영 직군</strong></a>
+                                                <button type="button" id="btnScrap_284353" class="btnScrap btnScrap_284353 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타픽시스튜디오] 게임 서비스 운영 직군', '284353', '스타픽시스튜디오', '없음', '없음', IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" data-value="284353|starpixie|284353">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력무관</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 용인시</span>
+                                                    <span>온라인PC게임, 모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">3일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=51773905" target="_blank">
+                                                    <strong>스타픽시스튜디오</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284356" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타픽시스튜디오] Full-stack 엔지니어', '284356', '스타픽시스튜디오', '없음', IsNullOrWhiteSpace('플랫폼 개발, 서버, 네트워크'), IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" target="_blank"><strong>[스타픽시스튜디오] Full-stack 엔지니어</strong></a>
+                                                <button type="button" id="btnScrap_284356" class="btnScrap btnScrap_284356 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타픽시스튜디오] Full-stack 엔지니어', '284356', '스타픽시스튜디오', '없음', '없음', IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" data-value="284356|starpixie|284356">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력3년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 용인시</span>
+                                                    <span>온라인PC게임, 모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">3일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=51773905" target="_blank">
+                                                    <strong>스타픽시스튜디오</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284357" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타픽시스튜디오] 게임 기획자', '284357', '스타픽시스튜디오', '없음', IsNullOrWhiteSpace('게임기획'), IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" target="_blank"><strong>[스타픽시스튜디오] 게임 기획자</strong></a>
+                                                <button type="button" id="btnScrap_284357" class="btnScrap btnScrap_284357 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타픽시스튜디오] 게임 기획자', '284357', '스타픽시스튜디오', '없음', '없음', IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" data-value="284357|starpixie|284357">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력2년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 용인시</span>
+                                                    <span>온라인PC게임, 모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">3일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=51773905" target="_blank">
+                                                    <strong>스타픽시스튜디오</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284358" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타픽시스튜디오] 게임 플레이 프로그래머', '284358', '스타픽시스튜디오', '없음', IsNullOrWhiteSpace('게임개발(클라이언트), 게임개발(모바일), 인터페이스 디자인, 서버, 네트워크'), IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" target="_blank"><strong>[스타픽시스튜디오] 게임 플레이 프로그래머</strong></a>
+                                                <button type="button" id="btnScrap_284358" class="btnScrap btnScrap_284358 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타픽시스튜디오] 게임 플레이 프로그래머', '284358', '스타픽시스튜디오', '없음', '없음', IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" data-value="284358|starpixie|284358">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>신입</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 용인시</span>
+                                                    <span>온라인PC게임, 모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">3일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=51773905" target="_blank">
+                                                    <strong>스타픽시스튜디오</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284359" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타픽시스튜디오] 게임 사업PM', '284359', '스타픽시스튜디오', '없음', IsNullOrWhiteSpace('사업기획(국내), 사업기획(해외), 전략기획, 사업관리'), IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" target="_blank"><strong>[스타픽시스튜디오] 게임 사업PM</strong></a>
+                                                <button type="button" id="btnScrap_284359" class="btnScrap btnScrap_284359 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타픽시스튜디오] 게임 사업PM', '284359', '스타픽시스튜디오', '없음', '없음', IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" data-value="284359|starpixie|284359">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력3년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 용인시</span>
+                                                    <span>온라인PC게임, 모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">3일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=51773905" target="_blank">
+                                                    <strong>스타픽시스튜디오</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284362" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타픽시스튜디오] 게임 아티스트', '284362', '스타픽시스튜디오', '없음', IsNullOrWhiteSpace('인터페이스 디자인, 원화, 애니메이션, 이펙트&#183;FX'), IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" target="_blank"><strong>[스타픽시스튜디오] 게임 아티스트</strong></a>
+                                                <button type="button" id="btnScrap_284362" class="btnScrap btnScrap_284362 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타픽시스튜디오] 게임 아티스트', '284362', '스타픽시스튜디오', '없음', '없음', IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" data-value="284362|starpixie|284362">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력2년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 용인시</span>
+                                                    <span>온라인PC게임, 모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">3일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=51773905" target="_blank">
+                                                    <strong>스타픽시스튜디오</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284363" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타픽시스튜디오] 게임 기획 Lead', '284363', '스타픽시스튜디오', '없음', IsNullOrWhiteSpace('게임기획'), IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" target="_blank"><strong>[스타픽시스튜디오] 게임 기획 Lead</strong></a>
+                                                <button type="button" id="btnScrap_284363" class="btnScrap btnScrap_284363 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타픽시스튜디오] 게임 기획 Lead', '284363', '스타픽시스튜디오', '없음', '없음', IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" data-value="284363|starpixie|284363">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력5년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 용인시</span>
+                                                    <span>온라인PC게임, 모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">3일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=51773905" target="_blank">
+                                                    <strong>스타픽시스튜디오</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284364" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타픽시스튜디오] 커뮤니티 매니저 (콘텐츠&#183;영상)', '284364', '스타픽시스튜디오', '없음', IsNullOrWhiteSpace('마케팅, 홍보, 해외 마케팅, 프로모션, 광고기획'), IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" target="_blank"><strong>[스타픽시스튜디오] 커뮤니티 매니저 (콘텐츠&#183;영상)</strong></a>
+                                                <button type="button" id="btnScrap_284364" class="btnScrap btnScrap_284364 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타픽시스튜디오] 커뮤니티 매니저 (콘텐츠&#183;영상)', '284364', '스타픽시스튜디오', '없음', '없음', IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" data-value="284364|starpixie|284364">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력2년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 용인시</span>
+                                                    <span>온라인PC게임, 모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">3일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=51773905" target="_blank">
+                                                    <strong>스타픽시스튜디오</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284365" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[스타픽시스튜디오] 경영지원 (총무)', '284365', '스타픽시스튜디오', '없음', IsNullOrWhiteSpace('총무, 구매'), IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" target="_blank"><strong>[스타픽시스튜디오] 경영지원 (총무)</strong></a>
+                                                <button type="button" id="btnScrap_284365" class="btnScrap btnScrap_284365 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[스타픽시스튜디오] 경영지원 (총무)', '284365', '스타픽시스튜디오', '없음', '없음', IsNullOrWhiteSpace('온라인PC게임, 모바일게임'), '없음', IsNullOrWhiteSpace('경기 &gt; 용인시 기흥구'));" data-value="284365|starpixie|284365">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력3년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>경기 &gt; 용인시</span>
+                                                    <span>온라인PC게임, 모바일게임</span>
+                                                    <span>정규직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">채용시</span><span class="modifyDate">3일 전 등록</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="company noLogo">
+                                                <a href="/Company/Detail?tabcode=1&M=11526566" target="_blank">
+                                                    <strong>주식회사 컴투스</strong>
+                                                </a>
+                                                
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="tit">
+                                                <a href="/Recruit/GI_Read/View?GI_No=284448" onclick="GA_Application_Prdt('02_공고클릭', 'N', '[컴투스] [일본 IP 프로젝트] 게임 사운드 디자이너 (계약직/2년 이상)', '284448', '주식회사 컴투스', '없음', IsNullOrWhiteSpace('사운드 제작'), IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 금천구'));" target="_blank"><strong>[컴투스] [일본 IP 프로젝트] 게임 사운드 디자이너 (계약직/2년 이상)</strong></a>
+                                                <button type="button" id="btnScrap_284448" class="btnScrap btnScrap_284448 " title="채용공고 스크랩" onclick="GA_Application_Prdt('04_공고스크랩', 'N', '[컴투스] [일본 IP 프로젝트] 게임 사운드 디자이너 (계약직/2년 이상)', '284448', '주식회사 컴투스', '없음', '없음', IsNullOrWhiteSpace('모바일게임'), '없음', IsNullOrWhiteSpace('서울 &gt; 금천구'));" data-value="284448|com2us|284448">채용공고 스크랩</button>
+                                                <p class="info">
+                                                    <span>경력2년↑</span>
+                                                    <span>학력무관</span>
+                                                    <span>서울 &gt; 금천구</span>
+                                                    <span>모바일게임</span>
+                                                    <span>계약직</span>
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td><span class="date">상시</span><span class="modifyDate">3시간 전 등록</span></td>
+                                    </tr>
+                            </tbody>
+                        </table>
+            <div class="pagination">
+                <div class="inner">
+
+
+
+
+                                <a href="/recruit/_GI_Job_List?Page=1" data-page="1" class="btn">1</a>
+                                <span class="btn now">2</span>
+                                <a href="/recruit/_GI_Job_List?Page=3" data-page="3" class="btn">3</a>
+                                <a href="/recruit/_GI_Job_List?Page=4" data-page="4" class="btn">4</a>
+                                <a href="/recruit/_GI_Job_List?Page=5" data-page="5" class="btn">5</a>
+                                <a href="/recruit/_GI_Job_List?Page=6" data-page="6" class="btn">6</a>
+                                <a href="/recruit/_GI_Job_List?Page=7" data-page="7" class="btn">7</a>
+                                <a href="/recruit/_GI_Job_List?Page=8" data-page="8" class="btn">8</a>
+                                <a href="/recruit/_GI_Job_List?Page=9" data-page="9" class="btn">9</a>
+                                <a href="/recruit/_GI_Job_List?Page=10" data-page="10" class="btn">10</a>
+
+
+
+                        <a href="/recruit/_GI_Job_List?Page=11" class="btnNext" data-page="11">다음 <span class="icoNext"></span></a>
+                </div>
+            </div>
+                </article>
+            </div>
+        </div>
+
+        
+
+    </div>
+</div>
+
+
