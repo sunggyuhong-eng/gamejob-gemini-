@@ -8,7 +8,7 @@ gamejob_tracker.py
 2. 기업 로고(i.gamejob.co.kr / file.gamejob.co.kr), 대표자, 설립연도, 대표게임, 홈페이지 자동 수집 및 캐싱
 3. 직무별, 기업별 공고 수 집계 및 월별 CSV 스냅샷 저장
 4. 구글 뉴스 RSS / 게임잡 뉴스 / 게임메카 커뮤니티 이슈 실시간 수집
-5. Gemini 2.5 AI + Google Search Grounding 딥다이브 월간 리포트 자동 생성
+5. Gemini 1.5 AI + Google Search Grounding 딥다이브 월간 리포트 자동 생성
 """
 
 import argparse
@@ -777,8 +777,8 @@ def generate_ai_monthly_report(jobs, run_date: str):
     # 5. 프롬프트 생성 및 Gemini 호출
     prompt = build_ai_deep_prompt(stats, top_inc_titles, top_dec_titles, gamejob_news, dc_news, gnews_industry, gnews_top_inc)
 
-    print("[ai] Gemini 2.5 AI + Google Search Grounding 딥다이브 분석 호출 중...")
-    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    print("[ai] Gemini 1.5 AI + Google Search Grounding 딥다이브 분석 호출 중...")
+    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
 
     try:
         resp = requests.post(
