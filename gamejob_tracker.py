@@ -1,16 +1,14 @@
 """
 gamejob_tracker.py
-게임잡 채용공고 트래킹 + 구글 뉴스/게임잡 뉴스/게임메카 크롤링 + Gemini AI 딥다이브 월간 리포트 자동 생성 스크립트
+게임잡 채용공고 트래킹 + 회사 로고/기업정보 자동 수집 + Gemini AI 딥 분석 자동 생성 스크립트
 
 기능
 ----
-1. 게임잡 전체 채용공고 리스트 수집
-2. 직무별(모바일 상세 페이지 파싱 + 키워드 분류), 기업별 공고 수 집계
-3. 기업 로고, 대표자, 설립연도, 대표게임, 홈페이지 등 기업 정보 자동 수집 및 캐싱
-4. [신규] 구글 뉴스 RSS 실시간 크롤링 (게임 업계 이슈 및 공고 변동 TOP 기업 뉴스)
-5. [신규] 게임잡 공식 뉴스 및 게임메카 갤러리 헤드라인 크롤링
-6. 채용 데이터 + 실제 공고 제목 + 크롤링된 뉴스를 결합하여 Gemini AI 딥다이브 분석 리포트 자동 생성
-7. 대시보드(index.html) 연동용 index.json 및 리포트 파일 자동 저장
+1. 게임잡 전체 채용공고 리스트 수집 (기업 ID 추출 강화)
+2. 기업 로고(i.gamejob.co.kr / file.gamejob.co.kr), 대표자, 설립연도, 대표게임, 홈페이지 자동 수집 및 캐싱
+3. 직무별, 기업별 공고 수 집계 및 월별 CSV 스냅샷 저장
+4. 구글 뉴스 RSS / 게임잡 뉴스 / 게임메카 커뮤니티 이슈 실시간 수집
+5. Gemini 2.5 AI + Google Search Grounding 딥다이브 월간 리포트 자동 생성
 """
 
 import argparse
@@ -65,8 +63,9 @@ COMPANY_INFO_CACHE_PATH = DATA_DIR / "company_info_cache.csv"
 for d in (SNAPSHOT_DIR, DEBUG_DIR, REPORT_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
-GI_NO_RE = re.compile(r"GI_Read/View\?GI_No=(\d+)")
-COMPANY_RE = re.compile(r"Company/Detail\?tabcode=1&M=(\d+)")
+GI_NO_RE = re.compile(r"GI_Read/View\?GI_No=(\d+)", re.IGNORECASE)
+# 다양한 URL 파라미터 형식을 유연하게 잡아내도록 수정된 기업 ID 정규식
+COMPANY_RE = re.compile(r"Company/Detail\?.*?\bM=(\d+)", re.IGNORECASE)
 
 JOB_FUNCTION_KEYWORDS = {
     "프로그래밍": ["프로그래머", "개발자", "클라이언트", "서버 개발", "엔진", "백엔드",
@@ -122,11 +121,10 @@ def classify_job_function(title: str) -> str:
 
 
 # ----------------------------------------------------------------------------
-# 뉴스 및 커뮤니티 크롤러 (구글 뉴스 RSS + 게임잡 뉴스 + 디시 게임메카)
+# 뉴스 크롤러 (구글 뉴스 RSS + 게임잡 뉴스 + 디시 게임메카)
 # ----------------------------------------------------------------------------
 
 def fetch_google_news_rss(query: str, limit=6) -> list:
-    """구글 뉴스 RSS 실시간 검색 크롤링"""
     encoded_q = urllib.parse.quote(query)
     url = f"https://news.google.com/rss/search?q={encoded_q}&hl=ko&gl=KR&ceid=KR:ko"
     headlines = []
@@ -149,7 +147,6 @@ def fetch_google_news_rss(query: str, limit=6) -> list:
 
 
 def fetch_gamejob_news(session: requests.Session, limit=8) -> list:
-    """게임잡 뉴스 게시판 크롤링"""
     url = "https://www.gamejob.co.kr/Community/news?Comm_Stat=0"
     headlines = []
     try:
@@ -170,7 +167,6 @@ def fetch_gamejob_news(session: requests.Session, limit=8) -> list:
 
 
 def fetch_dc_gamemeca_news(session: requests.Session, limit=8) -> list:
-    """게임메카 갤러리 실시간 크롤링"""
     url = "https://gall.dcinside.com/board/lists/?id=gamemeca"
     headlines = []
     try:
@@ -197,7 +193,7 @@ def fetch_dc_gamemeca_news(session: requests.Session, limit=8) -> list:
 
 
 # ----------------------------------------------------------------------------
-# 상세 정보 캐싱 (직종 및 기업 정보)
+# 기업 로고 및 상세정보 수집 / 캐싱 (강화된 파싱 로직)
 # ----------------------------------------------------------------------------
 
 MOBILE_DETAIL_URL = "https://m.gamejob.co.kr/Recruit?GI_No={gi_no}"
@@ -246,7 +242,7 @@ def save_company_info_cache(cache: dict):
 COMPANY_DETAIL_URL = "https://www.gamejob.co.kr/Company/Detail?M={company_id}"
 
 LOGO_URL_RE = re.compile(
-    r'(?:https?:)?//file\.gamejob\.co\.kr/net/Corp/CoImage/LogoView\?FN=[^"\'\s<>\)]+',
+    r'(?:https?:)?//(?:file|i)\.gamejob\.co\.kr/net/Corp/CoImage/LogoView\?FN=[^"\'\s<>\)]+',
     re.IGNORECASE,
 )
 CEO_NAME_RE = re.compile(r'대표자명\s*\n\s*([^\n]+)')
@@ -268,12 +264,14 @@ def _clean_field(val):
 
 
 def fetch_company_info(session: requests.Session, company_id: str):
+    """회사 상세페이지에서 기업 로고 및 핵심 정보 파싱"""
     info = {k: "" for k in COMPANY_INFO_FIELDS}
     try:
         r = session.get(COMPANY_DETAIL_URL.format(company_id=company_id), timeout=15)
         if r.status_code != 200:
             return info
 
+        # 1) 정규식으로 로고 URL 일치 여부 확인
         m = LOGO_URL_RE.search(r.text)
         if m:
             url = m.group(0)
@@ -283,7 +281,21 @@ def fetch_company_info(session: requests.Session, company_id: str):
                 url = "https://" + url[len("http://"):]
             info["logo_url"] = url
 
-        text = BeautifulSoup(r.text, "html.parser").get_text("\n", strip=True)
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        # 2) 로고 이미지 폴백: img 태그에서 직접 찾기
+        if not info["logo_url"]:
+            for img in soup.find_all("img", src=True):
+                src = img["src"]
+                if "Logo" in src or "logo" in src or "CoImage" in src or "Corp" in src:
+                    if src.startswith("//"):
+                        src = "https:" + src
+                    elif src.startswith("/"):
+                        src = BASE + src
+                    info["logo_url"] = src
+                    break
+
+        text = soup.get_text("\n", strip=True)
 
         ceo_m = CEO_NAME_RE.search(text)
         if ceo_m:
@@ -320,15 +332,15 @@ def backfill_company_logos(jobs, verbose=True):
     missing = [cid for cid in company_ids if not info_cache.get(cid, {}).get("logo_url")]
 
     if verbose:
-        print(f"[logo] 전체 회사 수: {len(company_ids)}곳 / 정보 없는 회사: {len(missing)}곳")
+        print(f"[logo] 전체 기업 수: {len(company_ids)}곳 / 신규/로고 미수집 기업: {len(missing)}곳")
 
     for i, company_id in enumerate(missing, 1):
         info = fetch_company_info(session, company_id)
         if any(info.values()):
             info_cache[company_id] = info
         if verbose and i % 30 == 0:
-            print(f"[logo] {i}/{len(missing)}곳 완료")
-        time.sleep(0.2)
+            print(f"[logo] {i}/{len(missing)}곳 수집 완료")
+        time.sleep(0.15)
 
     save_company_info_cache(info_cache)
 
@@ -473,6 +485,7 @@ def parse_list_page(html: str):
         row_text = row.get_text(" ", strip=True) if row else ""
 
         company_name, company_id = None, None
+        # 회사 상세 링크 및 company_id 파싱 개선
         comp_a = row.find("a", href=COMPANY_RE) if row else None
         if comp_a:
             company_name = comp_a.get_text(strip=True)
