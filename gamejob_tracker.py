@@ -1,28 +1,16 @@
 """
 gamejob_tracker.py
-게임잡(gamejob.co.kr) 채용공고 트래킹 + Gemini AI 기반 월간 종합 리포트 자동 생성 스크립트
+게임잡 채용공고 트래킹 + 구글 뉴스/게임잡 뉴스/게임메카 크롤링 + Gemini AI 딥다이브 월간 리포트 자동 생성 스크립트
 
 기능
 ----
 1. 게임잡 전체 채용공고 리스트 수집
 2. 직무별(모바일 상세 페이지 파싱 + 키워드 분류), 기업별 공고 수 집계
 3. 기업 로고, 대표자, 설립연도, 대표게임, 홈페이지 등 기업 정보 자동 수집 및 캐싱
-4. 이전 스냅샷과 비교하여 신규 등록 / 마감(삭제) 공고 파악
-5. [NEW] Gemini API + Google Search Grounding을 활용한 최신 뉴스 기반 월간 AI 분석 리포트 자동 생성
-6. 대시보드(index.html) 연동용 index.json 및 리포트 파일 자동 저장
-
-사용법
-------
-    # 1) 사이트 구조 및 크롤링 가능 여부 테스트
-    python gamejob_tracker.py --debug
-
-    # 2) 실제 수집 + Gemini AI 월간 리포트 자동 생성 실행
-    # (환경변수 GEMINI_API_KEY 가 설정되어 있으면 AI 리포트까지 함께 생성됩니다)
-    python gamejob_tracker.py --run
-
-설치
-----
-    pip install requests beautifulsoup4
+4. [신규] 구글 뉴스 RSS 실시간 크롤링 (게임 업계 이슈 및 공고 변동 TOP 기업 뉴스)
+5. [신규] 게임잡 공식 뉴스 및 게임메카 갤러리 헤드라인 크롤링
+6. 채용 데이터 + 실제 공고 제목 + 크롤링된 뉴스를 결합하여 Gemini AI 딥다이브 분석 리포트 자동 생성
+7. 대시보드(index.html) 연동용 index.json 및 리포트 파일 자동 저장
 """
 
 import argparse
@@ -31,6 +19,8 @@ import json
 import os
 import re
 import time
+import urllib.parse
+import xml.etree.ElementTree as ET
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -129,6 +119,81 @@ def classify_job_function(title: str) -> str:
             if kw in title:
                 return func
     return "기타/미분류"
+
+
+# ----------------------------------------------------------------------------
+# 뉴스 및 커뮤니티 크롤러 (구글 뉴스 RSS + 게임잡 뉴스 + 디시 게임메카)
+# ----------------------------------------------------------------------------
+
+def fetch_google_news_rss(query: str, limit=6) -> list:
+    """구글 뉴스 RSS 실시간 검색 크롤링"""
+    encoded_q = urllib.parse.quote(query)
+    url = f"https://news.google.com/rss/search?q={encoded_q}&hl=ko&gl=KR&ceid=KR:ko"
+    headlines = []
+    try:
+        r = requests.get(url, timeout=10)
+        if r.status_code == 200:
+            root = ET.fromstring(r.content)
+            for item in root.findall(".//item"):
+                title = item.find("title")
+                if title is not None and title.text:
+                    clean_title = title.text.split(" - ")[0].strip()
+                    if clean_title and clean_title not in headlines:
+                        headlines.append(clean_title)
+                    if len(headlines) >= limit:
+                        break
+        print(f"[news] 구글 뉴스 '{query}' {len(headlines)}건 크롤링 완료")
+    except Exception as e:
+        print(f"[news] 구글 뉴스 RSS 수집 실패 ({query}): {e}")
+    return headlines
+
+
+def fetch_gamejob_news(session: requests.Session, limit=8) -> list:
+    """게임잡 뉴스 게시판 크롤링"""
+    url = "https://www.gamejob.co.kr/Community/news?Comm_Stat=0"
+    headlines = []
+    try:
+        r = session.get(url, timeout=15)
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            for a in soup.find_all("a", href=True):
+                if "/Community/news/detail" in a["href"] or "news" in a["href"]:
+                    title = a.get_text(strip=True)
+                    if title and len(title) > 6 and title not in headlines and "뉴스" not in title:
+                        headlines.append(title)
+                    if len(headlines) >= limit:
+                        break
+        print(f"[news] 게임잡 공식 뉴스 {len(headlines)}건 크롤링 완료")
+    except Exception as e:
+        print(f"[news] 게임잡 뉴스 크롤링 실패: {e}")
+    return headlines
+
+
+def fetch_dc_gamemeca_news(session: requests.Session, limit=8) -> list:
+    """게임메카 갤러리 실시간 크롤링"""
+    url = "https://gall.dcinside.com/board/lists/?id=gamemeca"
+    headlines = []
+    try:
+        dc_headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36"
+        }
+        r = session.get(url, headers=dc_headers, timeout=15)
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, "html.parser")
+            for tr in soup.find_all("tr", class_="ub-content"):
+                tit_td = tr.find("td", class_="gall_tit")
+                if tit_td:
+                    a = tit_td.find("a")
+                    if a:
+                        title = a.get_text(strip=True)
+                        if title and len(title) > 5 and title not in headlines:
+                            headlines.append(title)
+                        if len(headlines) >= limit:
+                            break
+        print(f"[news] DC 게임메카 이슈 {len(headlines)}건 크롤링 완료")
+    except Exception as e:
+        print(f"[news] DC 게임메카 크롤링 실패: {e}")
+    return headlines
 
 
 # ----------------------------------------------------------------------------
@@ -386,8 +451,6 @@ def debug_dump():
     print()
     if working:
         print(f"[debug] 정상 작동 후보: {working} -> python gamejob_tracker.py --run 실행 가능")
-    else:
-        print("[debug] 모든 후보의 페이지네이션 검증 실패. debug/ 폴더 HTML을 확인해주세요.")
 
 
 def parse_list_page(html: str):
@@ -543,13 +606,77 @@ def crawl_all_listings(max_pages=200, sleep_sec=0.5, verbose=True):
 
 
 # ----------------------------------------------------------------------------
-# Gemini AI 기반 월간 뉴스 & 채용 트렌드 종합 리포트 생성기
+# Gemini AI 기반 딥다이브 월간 리포트 자동 생성기
 # ----------------------------------------------------------------------------
 
-def generate_ai_monthly_report(jobs, run_date: str):
-    """Gemini 2.5 API + Google Search Grounding 기능을 활용하여
-    데이터 분석 + 최신 뉴스/프로젝트 이슈 수집 + 월간 종합 리포트 작성을 자동화합니다."""
+def extract_company_top_titles(jobs, company_name, limit=10):
+    titles = [j.get("title", "") for j in jobs if j.get("company_name") == company_name]
+    return titles[:limit]
 
+
+def build_ai_deep_prompt(stats, top_inc_titles, top_dec_titles, gamejob_news, dc_news, gnews_industry, gnews_top_inc):
+    gain_comp = stats["compGain"]["name"] if stats.get("compGain") else "없음"
+    drop_comp = stats["compDrop"]["name"] if stats.get("compDrop") else "없음"
+
+    inc_titles_str = "\n".join([f"  * {t}" for t in top_inc_titles]) if top_inc_titles else "  (공고 목록 없음)"
+    dec_titles_str = "\n".join([f"  * {t}" for t in top_dec_titles]) if top_dec_titles else "  (공고 목록 없음)"
+
+    gj_news_str = "\n".join([f"  * {n}" for n in gamejob_news]) if gamejob_news else "  (크롤링 뉴스 없음)"
+    dc_news_str = "\n".join([f"  * {n}" for n in dc_news]) if dc_news else "  (커뮤니티 이슈 없음)"
+    gn_ind_str = "\n".join([f"  * {n}" for n in gnews_industry]) if gnews_industry else "  (구글 뉴스 없음)"
+    gn_inc_str = "\n".join([f"  * {n}" for n in gnews_top_inc]) if gnews_top_inc else "  (구글 뉴스 없음)"
+
+    group_lines = "\n".join([
+        f"- {d['g']}: 이번달 {d['cur']}건 (지난달 {d['prev']}건, 변동: {d['delta']:+}건)"
+        for d in stats["groupDeltas"]
+    ])
+
+    return f"""너는 게임 산업 전문 수석 애널리스트(Senior Industry Analyst)야.
+아래 **실시간 수집된 채용 공고 데이터, 기업 세부 공고 타이틀, 구글 뉴스 RSS, 게임잡 공식 뉴스, 게임메카 커뮤니티 동향**을 종합 결합하여, 깊이 있는 월간 게임 채용 시장 심층 리포트를 작성해줘.
+
+[데이터 수집 기준: {stats['date']} (전월: {stats['prevDate']})]
+- 전체 공고 수: 이번달 {stats['latestTotal']}건 (전월 대비 {stats['totalDelta']:+}건)
+
+[공고 최다 증가 기업: {gain_comp} (전월 대비 {stats['compGain']['delta'] if stats.get('compGain') else 0:+}건)]
+- 실제 모바일/PC 등록 공고 제목:
+{inc_titles_str}
+- 최근 구글 뉴스 ({gain_comp}):
+{gn_inc_str}
+
+[공고 최다 감소 기업: {drop_comp} (전월 대비 {stats['compDrop']['delta'] if stats.get('compDrop') else 0:+}건)]
+- 실제 모바일/PC 등록 공고 제목:
+{dec_titles_str}
+
+[직군 그룹별 변동]
+{group_lines}
+
+[실시간 수집 1: 구글 뉴스 (게임 업계 일반)]
+{gn_ind_str}
+
+[실시간 수집 2: 게임잡 공식 뉴스 (https://www.gamejob.co.kr/Community/news)]
+{gj_news_str}
+
+[실시간 수집 3: 게임메카 / 업계 커뮤니티 최근 이슈 (gall.dcinside.com/gamemeca)]
+{dc_news_str}
+
+--------------------------------------------------
+[리포트 작성 가이드 - 3단계 심층 분석]
+
+### 📊 1. 게임 시장 거시 동향 & 직군별 수요 원인 분석
+- 구글 뉴스, 게임잡 뉴스, 커뮤니티 동향과 직군 변동 수치를 연계하여, 개발/아트/기획 등 특정 직군 공고가 늘거나 줄어든 **실제 업계 환경 원인**(멀티플랫폼 확장, 언리얼5 전환, 생성형 AI 파이프라인, 서브컬처/MMO 시장 변화 등)을 분석해줘.
+
+### 📰 2. 주요 기업 변동 원인 & 프로젝트 딥다이브 (핵심)
+- **{gain_comp} 분석**: 등록된 실제 공고 제목과 구글/게임잡 뉴스를 결합하여, 지금 어떤 신작 프로젝트/게임 IP를 개발 중인지, 어떤 채용 트랙(공채/인턴십/수시)이 작동하고 있는지 세부 원인을 구체적으로 설명해줘.
+- **{drop_comp} 분석**: 공고가 줄어든 기업의 경우 프로젝트 개발 완료, 출시 후 라이브 전환, 조직 효율화 등 배경 원인을 언급해줘.
+
+### 💡 3. 채용 시장 시사점 & 기술 스택 전망
+- 게임 구직자, 현직자 및 HR 담당자가 대비해야 할 핵심 역량, 우대 기술 스택(C++, 유니티/언리얼, TA, AI 최적화 등) 및 전망을 3~4문장으로 정리해줘.
+
+전문 분석가 톤으로 가독성 높게 작성하고, 중요 키워드는 **볼드체**로 강조해줘.
+"""
+
+
+def generate_ai_monthly_report(jobs, run_date: str):
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         print("[ai] GEMINI_API_KEY 환경변수가 없습니다. AI 뉴스 리포트 생성을 건너끕니다.")
@@ -561,8 +688,15 @@ def generate_ai_monthly_report(jobs, run_date: str):
         return
 
     prev_date, prev_rows = prev
+    session = make_session()
 
-    # 통계 계산
+    # 1. 뉴스 크롤링 (구글 뉴스 RSS + 게임잡 뉴스 + DC 게임메카)
+    print("[ai] 구글 뉴스 RSS, 게임잡 뉴스 및 게임메카 이슈 크롤링 중...")
+    gnews_industry = fetch_google_news_rss("게임 업계 채용")
+    gamejob_news = fetch_gamejob_news(session)
+    dc_news = fetch_dc_gamemeca_news(session)
+
+    # 2. 기업 공고 수치 통계 계산
     cur_comp = Counter(j["company_name"] for j in jobs if j.get("company_name"))
     prev_comp = Counter(r["company_name"] for r in prev_rows if r.get("company_name"))
 
@@ -574,27 +708,63 @@ def generate_ai_monthly_report(jobs, run_date: str):
         comp_deltas.append((comp, cur_c - prev_c, cur_c, prev_c))
 
     comp_deltas.sort(key=lambda x: x[1], reverse=True)
-    top_increase = comp_deltas[0] if comp_deltas else None
-    top_decrease = comp_deltas[-1] if comp_deltas else None
+    top_inc = comp_deltas[0] if comp_deltas else None
+    top_dec = comp_deltas[-1] if comp_deltas else None
 
-    prompt = f"""너는 대한민국 게임 산업 전문 애널리스트이자 채용 시장 분석가야.
-제공된 게임잡 채용 스냅샷 데이터와 너의 Google Search 기능(최신 회사 뉴스, 신작 게임 프로젝트 발표, 게임 업계 이슈 등)을 종합 활용하여 깊이 있는 분석 리포트를 작성해줘.
+    # 공고 증가 1위 기업 구글 뉴스 추가 수집
+    gnews_top_inc = fetch_google_news_rss(top_inc[0]) if top_inc else []
 
-[이번 달 게임잡 채용 데이터]
-- 수집 기준일: {run_date} (지난달: {prev_date})
-- 전체 공고 수: 이번달 {len(jobs)}건 / 지난달 {len(prev_rows)}건 (전월 대비: {len(jobs) - len(prev_rows):+}건)
-- 공고 증가 1위 기업: {top_increase[0] if top_increase else '없음'} (이번달 {top_increase[2]}건, 전월대비 {top_increase[1]:+}건)
-- 공고 감소 1위 기업: {top_decrease[0] if top_decrease else '없음'} (이번달 {top_decrease[2]}건, 전월대비 {top_decrease[1]:+}건)
+    # 3. 주요 기업의 실제 등록 공고 타이틀 추출
+    top_inc_titles = extract_company_top_titles(jobs, top_inc[0]) if top_inc else []
+    top_dec_titles = extract_company_top_titles(jobs, top_dec[0]) if top_dec else []
 
-[분석 요구사항 및 리포트 작성 가이드]
-1. 직무 및 고용형태 동향 분석: 어떤 직무군과 고용형태가 시장을 이끌고 있는지 요약해줘.
-2. 최신 회사 뉴스 & 게임 프로젝트 연계 분석:
-   - 공고 변동이 큰 주요 기업들({top_increase[0] if top_increase else ''}, {top_decrease[0] if top_decrease else ''} 등)에 대해 최신 소식, 신작 개발 상황, 구조조정/투자 이슈 등을 실시간 검색하여 채용 증감의 배경 원인을 분석해줘.
-   - 최근 게임 업계 트렌드(AI 도입, 모바일/PC/콘솔 다변화, 특정 장르 유행 등)와 연결지어 설명해줘.
-3. 구직자/현직자 시사점: 현재 채용 시장 흐름에서 게임 구직자들이 가져가야 할 전략 및 향후 전망을 정리해줘.
-4. 문체: 가독성 높은 한국어로 작성하고 핵심 키워드는 **볼드체**로 강조해줘. 마크다운 형식으로 작성해줘."""
+    # 4. 직군별 변동 집계
+    group_order = ['개발','아트','기획','QA','사업','지원부서']
+    group_info = [
+        ['개발', ['클라이언트','서버','엔진','AI 개발','플랫폼','인프라','프로그래','개발자','백엔드','프론트','네트워크','기술지원']],
+        ['아트', ['디자인','원화','모델링','애니메이션','이펙트','그래픽','아트','일러스트','컨셉','사운드','영상']],
+        ['QA', ['QA','테스터','운영','고객','커뮤니티']],
+        ['사업', ['사업','마케팅','홍보','영업','BD','퍼블리싱','미디어','전략']],
+        ['기획', ['기획','시나리오','레벨디자인','밸런스']],
+    ]
+    
+    def get_job_cats(j):
+        if j.get("job_categories"):
+            return j["job_categories"].split(";")
+        return [j.get("job_function", "지원부서")]
 
-    print("[ai] Gemini AI + Google Search Grounding 분석 시작...")
+    def classify_grp(cat_str):
+        for g, kws in group_info:
+            if any(kw in cat_str for kw in kws):
+                return g
+        return '지원부서'
+
+    def group_counts(job_list):
+        c = {g: 0 for g in group_order}
+        for j in job_list:
+            groups_hit = set(classify_grp(cat) for cat in get_job_cats(j))
+            for g in groups_hit:
+                c[g] += 1
+        return c
+
+    cur_g = group_counts(jobs)
+    prev_g = group_counts(prev_rows)
+    group_deltas = [{"g": g, "cur": cur_g[g], "prev": prev_g[g], "delta": cur_g[g] - prev_g[g]} for g in group_order]
+
+    stats = {
+        "date": run_date,
+        "prevDate": prev_date,
+        "latestTotal": len(jobs),
+        "totalDelta": len(jobs) - len(prev_rows),
+        "compGain": {"name": top_inc[0], "delta": top_inc[1]} if top_inc else None,
+        "compDrop": {"name": top_dec[0], "delta": top_dec[1]} if top_dec else None,
+        "groupDeltas": group_deltas
+    }
+
+    # 5. 프롬프트 생성 및 Gemini 호출
+    prompt = build_ai_deep_prompt(stats, top_inc_titles, top_dec_titles, gamejob_news, dc_news, gnews_industry, gnews_top_inc)
+
+    print("[ai] Gemini 2.5 AI + Google Search Grounding 딥다이브 분석 호출 중...")
     endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
 
     try:
@@ -605,7 +775,7 @@ def generate_ai_monthly_report(jobs, run_date: str):
                 "contents": [{"parts": [{"text": prompt}]}],
                 "tools": [{"googleSearch": {}}]
             },
-            timeout=90
+            timeout=120
         )
 
         if resp.status_code == 200:
@@ -614,22 +784,20 @@ def generate_ai_monthly_report(jobs, run_date: str):
             if candidates:
                 text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
                 if text:
-                    # 마크다운 리포트 저장
                     report_path = REPORT_DIR / f"{run_date}_ai_analysis.md"
                     report_path.write_text(text, encoding="utf-8")
 
-                    # 프론트엔드 자동 노출용 최신 리포트 JSON 저장
                     latest_json_path = DATA_DIR / "latest_ai_report.json"
                     latest_json_path.write_text(
                         json.dumps({"date": run_date, "content": text}, ensure_ascii=False, indent=2),
                         encoding="utf-8"
                     )
-                    print(f"[ai] AI 월간 종합 분석 리포트 생성 완료! ({report_path})")
+                    print(f"[ai] 뉴스 결합 딥다이브 월간 리포트 생성 완료! ({report_path})")
                     return
 
-        print(f"[ai] Gemini API 호출 실패 (상태 코드: {resp.status_code}): {resp.text[:200]}")
+        print(f"[ai] Gemini API 호출 실패 ({resp.status_code}): {resp.text[:200]}")
     except Exception as e:
-        print(f"[ai] Gemini API 요청 중 오류 발생: {e}")
+        print(f"[ai] Gemini API 요청 오류: {e}")
 
 
 # ----------------------------------------------------------------------------
@@ -751,11 +919,8 @@ def main():
 
         jobs = backfill_company_logos(jobs)
 
-        # 1. CSV 스냅샷 및 수치 리포트 생성
         save_snapshot(jobs, run_date)
         generate_report(jobs, run_date)
-
-        # 2. Gemini AI 종합 뉴스 분석 리포트 생성
         generate_ai_monthly_report(jobs, run_date)
         return
 
