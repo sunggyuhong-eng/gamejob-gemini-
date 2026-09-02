@@ -5,7 +5,7 @@ gamejob_tracker.py
 기능
 ----
 1. 게임잡 전체 채용공고 리스트 수집 (기업 ID 추출 강화)
-2. 기업 로고(i.gamejob.co.kr / file.gamejob.co.kr), 대표자, 설립연도, 대표게임, 홈페이지 자동 수집 및 캐싱
+2. 기업 로고, 대표자, 설립연도, 대표게임, 홈페이지 자동 수집 및 캐싱
 3. 직무별, 기업별 공고 수 집계 및 월별 CSV 스냅샷 저장
 4. 구글 뉴스 RSS / 게임잡 뉴스 / 게임메카 커뮤니티 이슈 실시간 수집
 5. Gemini 1.5 AI + Google Search Grounding 딥다이브 월간 리포트 자동 생성
@@ -64,7 +64,6 @@ for d in (SNAPSHOT_DIR, DEBUG_DIR, REPORT_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
 GI_NO_RE = re.compile(r"GI_Read/View\?GI_No=(\d+)", re.IGNORECASE)
-# 다양한 URL 파라미터 형식을 유연하게 잡아내도록 수정된 기업 ID 정규식
 COMPANY_RE = re.compile(r"Company/Detail\?.*?\bM=(\d+)", re.IGNORECASE)
 
 JOB_FUNCTION_KEYWORDS = {
@@ -193,7 +192,7 @@ def fetch_dc_gamemeca_news(session: requests.Session, limit=8) -> list:
 
 
 # ----------------------------------------------------------------------------
-# 기업 로고 및 상세정보 수집 / 캐싱 (강화된 파싱 로직)
+# 기업 로고 및 상세정보 수집 / 캐싱
 # ----------------------------------------------------------------------------
 
 MOBILE_DETAIL_URL = "https://m.gamejob.co.kr/Recruit?GI_No={gi_no}"
@@ -264,14 +263,12 @@ def _clean_field(val):
 
 
 def fetch_company_info(session: requests.Session, company_id: str):
-    """회사 상세페이지에서 기업 로고 및 핵심 정보 파싱"""
     info = {k: "" for k in COMPANY_INFO_FIELDS}
     try:
         r = session.get(COMPANY_DETAIL_URL.format(company_id=company_id), timeout=15)
         if r.status_code != 200:
             return info
 
-        # 1) 정규식으로 로고 URL 일치 여부 확인
         m = LOGO_URL_RE.search(r.text)
         if m:
             url = m.group(0)
@@ -283,7 +280,6 @@ def fetch_company_info(session: requests.Session, company_id: str):
 
         soup = BeautifulSoup(r.text, "html.parser")
 
-        # 2) 로고 이미지 폴백: img 태그에서 직접 찾기
         if not info["logo_url"]:
             for img in soup.find_all("img", src=True):
                 src = img["src"]
@@ -485,7 +481,6 @@ def parse_list_page(html: str):
         row_text = row.get_text(" ", strip=True) if row else ""
 
         company_name, company_id = None, None
-        # 회사 상세 링크 및 company_id 파싱 개선
         comp_a = row.find("a", href=COMPANY_RE) if row else None
         if comp_a:
             company_name = comp_a.get_text(strip=True)
@@ -731,7 +726,7 @@ def generate_ai_monthly_report(jobs, run_date: str):
     top_inc_titles = extract_company_top_titles(jobs, top_inc[0]) if top_inc else []
     top_dec_titles = extract_company_top_titles(jobs, top_dec[0]) if top_dec else []
 
-    # 4. 직군별 변동 집계
+    # 4. 직군별 변동 집계 (리스트 및 문자열 데이터 안전 처리 버그 수정)
     group_order = ['개발','아트','기획','QA','사업','지원부서']
     group_info = [
         ['개발', ['클라이언트','서버','엔진','AI 개발','플랫폼','인프라','프로그래','개발자','백엔드','프론트','네트워크','기술지원']],
@@ -742,8 +737,11 @@ def generate_ai_monthly_report(jobs, run_date: str):
     ]
     
     def get_job_cats(j):
-        if j.get("job_categories"):
-            return j["job_categories"].split(";")
+        cats = j.get("job_categories")
+        if isinstance(cats, list) and cats:
+            return cats
+        elif isinstance(cats, str) and cats.strip():
+            return [c.strip() for c in cats.split(";") if c.strip()]
         return [j.get("job_function", "지원부서")]
 
     def classify_grp(cat_str):
@@ -774,7 +772,7 @@ def generate_ai_monthly_report(jobs, run_date: str):
         "groupDeltas": group_deltas
     }
 
-    # 5. 프롬프트 생성 및 Gemini 호출
+    # 5. 프롬프트 생성 및 Gemini 호출 (gemini-1.5-flash 표준 주소 적용)
     prompt = build_ai_deep_prompt(stats, top_inc_titles, top_dec_titles, gamejob_news, dc_news, gnews_industry, gnews_top_inc)
 
     print("[ai] Gemini 1.5 AI + Google Search Grounding 딥다이브 분석 호출 중...")
@@ -824,7 +822,8 @@ def save_snapshot(jobs, run_date: str) -> Path:
         w.writeheader()
         for j in jobs:
             row = {k: j.get(k) for k in FIELDNAMES}
-            row["job_categories"] = ";".join(j.get("job_categories") or [])
+            if isinstance(row.get("job_categories"), list):
+                row["job_categories"] = ";".join(row["job_categories"])
             w.writerow(row)
     print(f"[save] 스냅샷 저장 완료: {path} ({len(jobs)}건)")
     update_snapshot_manifest()
@@ -885,8 +884,15 @@ def generate_report(jobs, run_date: str):
 
     func_counter = Counter()
     for j in jobs:
-        cats = j.get("job_categories") or [j["job_function"]]
-        for c in cats:
+        cats = j.get("job_categories")
+        if isinstance(cats, list) and cats:
+            cat_list = cats
+        elif isinstance(cats, str) and cats.strip():
+            cat_list = [c.strip() for c in cats.split(";") if c.strip()]
+        else:
+            cat_list = [j.get("job_function", "지원부서")]
+
+        for c in cat_list:
             func_counter[c] += 1
 
     lines.append("\n## 직무별 공고 수\n")
