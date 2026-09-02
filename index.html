@@ -1034,7 +1034,7 @@ ${incTitlesStr}
 위 3개 섹션 구조로 구체적인 신작 프로젝트명, 기술 스택, 업계 뉴스 원인을 밝혀서 작성해줘. 핵심 키워드는 **볼드체**로 강조해줘.`;
 
   try {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
