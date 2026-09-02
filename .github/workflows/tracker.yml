@@ -1,0 +1,36 @@
+name: 게임잡 채용공고 수집
+
+on:
+  schedule:
+    # 매달 1일 00:00 UTC(한국시간 오전 9시)에 자동 실행
+    - cron: '0 0 1 * *'
+  workflow_dispatch: {}  # 우측 Actions 탭에서 수동으로도 실행 가능
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 저장소 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 파이썬 설치
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 필요한 패키지 설치
+        run: pip install -r requirements.txt
+
+      - name: 채용공고 수집 실행
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}  # <--- 이 2줄만 추가되었습니다!
+        run: python gamejob_tracker.py --run
+
+      - name: 결과 커밋 & 푸시
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "채용공고 자동 수집 ($(date +'%Y-%m-%d'))"
+          file_pattern: "data/**"
