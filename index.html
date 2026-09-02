@@ -168,19 +168,6 @@
   .insight-list .down-text{color:var(--down);font-weight:700;}
   .insight-footnote{margin-top:12px;font-size:11px;color:var(--muted);}
 
-  .ai-comment-row{display:flex;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(49,130,246,0.2);}
-  .ai-btn{
-    background:var(--blue);color:#fff;border:none;border-radius:8px;
-    padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;
-  }
-  .ai-btn:disabled{opacity:0.6;cursor:default;}
-  .ai-reset-btn{
-    background:none;border:none;color:var(--muted);font-size:11.5px;cursor:pointer;text-decoration:underline;
-  }
-  .ai-comment-box{
-    margin-top:12px;background:#fff;border-radius:10px;padding:14px 16px;
-    font-size:13.5px;line-height:1.6;white-space:pre-wrap;color:var(--text);
-  }
   .bd-block h4{font-size:12px;color:var(--muted);font-weight:700;margin:0 0 8px;}
   .bd-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border);}
   .bd-row:last-child{border-bottom:none;}
@@ -325,13 +312,7 @@
       <div class="panel insight-panel" id="insightPanel" style="display:none;">
         <div class="panel-title">📝 이번 달 채용 트렌드 요약</div>
         <ul class="insight-list" id="insightList"></ul>
-        <div class="insight-footnote">데이터 기반으로 자동 생성된 요약이에요.</div>
-
-        <div class="ai-comment-row">
-          <button class="ai-btn" id="aiCommentBtn" onclick="generateAiComment()">🤖 Gemini AI 실시간 분석</button>
-          <button class="ai-reset-btn" onclick="resetGeminiApiKey()">API 키 재설정</button>
-        </div>
-        <div class="ai-comment-box" id="aiCommentBox" style="display:none;"></div>
+        <div class="insight-footnote">데이터 기반으로 자동 생성된 요약이에요. 상단 '월별 리포트' 탭에서 AI 딥 분석을 확인할 수 있어요.</div>
       </div>
       <div class="panel" id="insightPlaceholder" style="display:none;">
         <div class="placeholder-hint">스냅샷이 2개 이상 쌓이면(다음 달부터) 여기에 트렌드 요약이 자동으로 나와요.</div>
@@ -875,57 +856,6 @@ function renderInsightSummary(){
   document.getElementById('insightList').innerHTML = bullets.map(b=>`<li>${b}</li>`).join('');
 }
 
-/* ---------- Gemini AI 분석 ---------- */
-function getGeminiApiKey(promptIfMissing){
-  let key = localStorage.getItem('gemini_api_key');
-  if(!key && promptIfMissing){
-    key = window.prompt('Gemini API 키를 입력하세요 (aistudio.google.com 에서 발급).\n브라우저에만 안전하게 저장됩니다.');
-    if(key) localStorage.setItem('gemini_api_key', key.trim());
-  }
-  return key ? key.trim() : null;
-}
-
-function resetGeminiApiKey(){
-  localStorage.removeItem('gemini_api_key');
-  alert('저장된 Gemini API 키를 지웠습니다.');
-}
-
-function buildAiPrompt(stats){
-  const groupLines = stats.groupDeltas.map(d=>
-    `- ${d.g}: 이번달 ${d.cur}건 (지난달 ${d.prev}건, 변동: ${d.delta>=0?'+':''}${d.delta}건)`
-  ).join('\n');
-  
-  const empLines = stats.empBreakdown.map(e=>
-    `- ${e.name}: 이번달 ${e.cur}건 (${e.pct}%), 지난달 ${e.prev}건`
-  ).join('\n');
-
-  const gainComp = stats.compGain ? stats.compGain.name : '없음';
-  const dropComp = stats.compDrop ? stats.compDrop.name : '없음';
-
-  return `너는 대한민국 게임 산업 전문 애널리스트야.
-제공된 게임잡 채용 스냅샷 데이터와 너의 Google Search 기능(최신 회사 뉴스, 신작 게임 프로젝트, 업계 이슈 등)을 종합 활용해서 분석 리포트를 작성해줘.
-
-[데이터 기준: ${stats.date} (비교: ${stats.prevDate})]
-- 전체 공고: 이번달 ${stats.latestTotal}건 (전월 대비: ${stats.totalDelta>=0?'+':''}${stats.totalDelta}건)
-
-[직무 변동]
-${groupLines}
-
-[고용형태]
-${empLines}
-
-[주요 기업 변동]
-- 증가 1위: ${gainComp} (${stats.compGain ? (stats.compGain.delta>=0?'+':'')+stats.compGain.delta : 0}건)
-- 감소 1위: ${dropComp} (${stats.compDrop ? stats.compDrop.delta : 0}건)
-
-[작성 요구사항]
-### 📊 1. 시장 총괄 동향
-### 📰 2. 주요 기업 변동 및 게임 프로젝트 뉴스 분석
-### 💡 3. 구직자 및 인사담당자 시사점
-
-위 3개 섹션 구조로 작성하고 핵심 키워드는 **볼드체**로 강조해줘.`;
-}
-
 function parseAiReportToHtml(markdownText) {
   const sections = markdownText.split(/(?=\n###? )/g);
   let html = '';
@@ -964,52 +894,6 @@ function parseAiReportToHtml(markdownText) {
   });
 
   return html;
-}
-
-async function generateAiComment(){
-  const stats = computeMonthlyStats();
-  if(!stats){ alert('스냅샷이 2개 이상 쌓여야 AI 분석을 실행할 수 있습니다.'); return; }
-
-  const apiKey = getGeminiApiKey(true);
-  if(!apiKey) return;
-
-  const box = document.getElementById('aiCommentBox');
-  const btn = document.getElementById('aiCommentBtn');
-  box.style.display = 'block';
-  box.innerHTML = '<div class="placeholder-hint">🔍 <b>Gemini AI</b>가 최신 게임 업계 뉴스 및 프로젝트 데이터를 종합 분석하고 있습니다...</div>';
-  btn.disabled = true;
-
-  try{
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-    const promptText = buildAiPrompt(stats);
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: promptText }] }],
-        tools: [{ googleSearch: {} }]
-      })
-    });
-
-    if(!res.ok){
-      box.textContent = `분석 생성 실패 (${res.status})`;
-      return;
-    }
-
-    const data = await res.json();
-    const candidate = data.candidates && data.candidates[0];
-    const text = candidate?.content?.parts?.map(p => p.text).join('\n').trim();
-
-    if(text){
-      box.innerHTML = parseAiReportToHtml(text);
-    } else {
-      box.textContent = '응답 데이터를 생성하지 못했습니다.';
-    }
-  }catch(err){
-    box.textContent = '오류 발생: ' + err.message;
-  }finally{
-    btn.disabled = false;
-  }
 }
 
 /* ---------- 월별 리포트 탭 & 팝업 모달 ---------- */
@@ -1052,24 +936,19 @@ async function openReportModal(snapIndex){
 
   const reportTitle = `${cur.date} 월간 게임 채용 분석 리포트 (${prev.date} 대비)`;
   titleEl.textContent = reportTitle;
-  bodyEl.innerHTML = '<div class="placeholder-hint">🔍 리포트 데이터 및 AI 분석을 불러오는 중입니다...</div>';
+  bodyEl.innerHTML = '<div class="placeholder-hint">🔍 리포트 데이터 및 AI 딥 분석을 불러오는 중입니다...</div>';
   modal.classList.add('active');
 
-  // 프롬프트 및 분석 기준 정보 템플릿
-  const promptCriteriaText = stats ? buildAiPrompt(stats) : '데이터가 부족하여 프롬프트를 생성할 수 없습니다.';
+  const promptCriteriaText = `[데이터 수집 및 분석 기준]
+1. 수집 대상: 게임잡 전체 공개 채용 공고 (모바일/PC 파싱)
+2. 뉴스/커뮤니티 크롤링: 게임잡 공식 뉴스(gamejob.co.kr/Community/news) & DC 게임메카(gall.dcinside.com/gamemeca) 실시간 수집
+3. 분석 모델: Gemini 2.5 Flash + Google Search Grounding
+4. 분석 범위: 거시 시장 동향 + 주요 기업 신작 프로젝트 딥다이브 + 기술 스택 전망`;
+
   const promptAccordionHtml = `
     <details class="ai-prompt-accordion">
-      <summary>📋 데이터 분석 기준 및 AI 프롬프트 보기</summary>
-      <div class="ai-prompt-content">
-<b>[데이터 수집 및 분석 기준]</b>
-1. 수집 대상: 게임잡(gamejob.co.kr) 전체 공개 채용 공고
-2. 분석 주기: 월간 단위 스냅샷 비교 (${prev.date} vs ${cur.date})
-3. 직군 분류: 제목 키워드 및 상세 페이지 모집분야 크롤링 데이터 (개발, 아트, 기획, QA, 사업 등)
-4. 외부 이슈 결합: Google Search Grounding을 통해 공고 변화가 큰 기업의 최신 뉴스, 신작 게임 프로젝트 발표, 공채 일정 등 실시간 수집 및 원인 분석
-
-<b>[실제 AI 입력 프롬프트]</b>
-${escapeHtml(promptCriteriaText)}
-      </div>
+      <summary>📋 데이터 분석 기준 정보 보기</summary>
+      <div class="ai-prompt-content">${escapeHtml(promptCriteriaText)}</div>
     </details>
   `;
 
@@ -1127,7 +1006,7 @@ function closeReportModal(){
   document.getElementById('reportModal').classList.remove('active');
 }
 
-/* 리포트 다운로드 기능 (.md 파일 다운로드) */
+/* 리포트 다운로드 (.md 파일 저장) */
 function downloadReport(){
   if(!currentReportData.text){
     alert('다운로드할 리포트 내용이 없습니다.');
@@ -1142,7 +1021,7 @@ function downloadReport(){
   URL.revokeObjectURL(url);
 }
 
-/* 리포트 공유하기 기능 */
+/* 리포트 공유하기 */
 function shareReport(){
   const shareTitle = currentReportData.title || '게임잡 채용 트래커 월간 리포트';
   const shareUrl = window.location.href;
@@ -1155,9 +1034,9 @@ function shareReport(){
     }).catch(() => {});
   } else {
     navigator.clipboard.writeText(shareUrl).then(() => {
-      alert('대시보드 링크(URL)가 클립보드에 복사되었습니다! 원하시는 곳에 공유해 보세요.');
+      alert('대시보드 링크(URL)가 클립보드에 복사되었습니다!');
     }).catch(() => {
-      alert('주소 복사에 실패했습니다. 브라우저 주소창의 URL을 직접 복사해 주세요.');
+      alert('주소 복사에 실패했습니다.');
     });
   }
 }
